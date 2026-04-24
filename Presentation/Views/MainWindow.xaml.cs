@@ -16,7 +16,8 @@ public partial class MainWindow : Window
         AppDbContext dbContext = new AppDbContext();
         UserRepository userRepository = new UserRepository(dbContext);
         GetUsersUseCase getUsersUseCase = new GetUsersUseCase(userRepository);
-        UserListViewModel userListViewModel = new UserListViewModel(getUsersUseCase);
+        CreateUserUseCase createUserUseCase = new CreateUserUseCase(userRepository);
+        UserListViewModel userListViewModel = new UserListViewModel(getUsersUseCase, createUserUseCase);
 
         // Asignamos el ViewModel a la ventana principal para que el UserListView lo herede
         DataContext = userListViewModel;
