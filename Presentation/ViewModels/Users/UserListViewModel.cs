@@ -19,12 +19,22 @@ public class UserListViewModel
 
     private async Task LoadUsersAsync()
     {
-        var usersFromDb = await _getUsersUseCase.ExecuteAsync();
-        
-        Users.Clear();
-        foreach (var user in usersFromDb)
+        try
         {
-            Users.Add(user);
+            var usersFromDb = await _getUsersUseCase.ExecuteAsync();
+            
+            // Debugging line
+            System.Windows.MessageBox.Show($"Usuarios cargados desde la base de datos: {usersFromDb.Count()}");
+
+            Users.Clear();
+            foreach (var user in usersFromDb)
+            {
+                Users.Add(user);
+            }
+        }
+        catch (System.Exception ex)
+        {
+            System.Windows.MessageBox.Show($"Error cargando usuarios: {ex.Message}\n{ex.InnerException?.Message}");
         }
     }
 }
