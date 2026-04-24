@@ -31,7 +31,6 @@ public class UserListViewModel : ViewModelBase
         var addUserViewModel = new AddUserViewModel(_createUserUseCase);
         var addUserWindow = new AddUserWindow(addUserViewModel);
         
-        // ShowDialog bloquea la ventana principal hasta que se cierre esta
         addUserWindow.ShowDialog();
 
         if (addUserViewModel.WasSaved)

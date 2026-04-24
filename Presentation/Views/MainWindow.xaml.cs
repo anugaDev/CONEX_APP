@@ -12,14 +12,12 @@ public partial class MainWindow : Window
     {
         InitializeComponent();
 
-        // Configuración manual de Inyección de Dependencias (DI)
         AppDbContext dbContext = new AppDbContext();
         UserRepository userRepository = new UserRepository(dbContext);
         GetUsersUseCase getUsersUseCase = new GetUsersUseCase(userRepository);
         CreateUserUseCase createUserUseCase = new CreateUserUseCase(userRepository);
         UserListViewModel userListViewModel = new UserListViewModel(getUsersUseCase, createUserUseCase);
 
-        // Asignamos el ViewModel a la ventana principal para que el UserListView lo herede
         DataContext = userListViewModel;
     }
 }
