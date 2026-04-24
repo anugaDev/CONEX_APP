@@ -1,0 +1,17 @@
+<UserControl x:Class="CONEX_APP.Presentation.Views.Classes.ClassListView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid Margin="10">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        
+        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
+            <Button Content="Atrás" Command="{Binding GoBackCommand}" Width="80" Padding="5" Margin="0,0,20,0"/>
+            <TextBlock Text="Tabla de Clases (En construcción)" FontSize="24" FontWeight="Bold" VerticalAlignment="Center"/>
+        </StackPanel>
+
+        <TextBlock Grid.Row="1" Text="Aquí irá la tabla de clases..." HorizontalAlignment="Center" VerticalAlignment="Center" FontSize="18" Foreground="Gray"/>
+    </Grid>
+</UserControl>

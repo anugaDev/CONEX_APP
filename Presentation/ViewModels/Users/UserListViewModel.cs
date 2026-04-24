@@ -1,4 +1,6 @@
+using System;
 using System.Collections.ObjectModel;
+using System.Threading.Tasks;
 using System.Windows.Input;
 using CONEX_APP.MainApplication.DTOs;
 using CONEX_APP.MainApplication.UseCases.Users;
@@ -14,14 +16,16 @@ public class UserListViewModel : ViewModelBase
 
     public ObservableCollection<UserDto> Users { get; set; }
     public ICommand OpenAddUserWindowCommand { get; }
+    public ICommand GoBackCommand { get; }
 
-    public UserListViewModel(GetUsersUseCase getUsersUseCase, CreateUserUseCase createUserUseCase)
+    public UserListViewModel(GetUsersUseCase getUsersUseCase, CreateUserUseCase createUserUseCase, Action goBack)
     {
         _getUsersUseCase = getUsersUseCase;
         _createUserUseCase = createUserUseCase;
         Users = new ObservableCollection<UserDto>();
         
         OpenAddUserWindowCommand = new RelayCommand(_ => OpenAddUserWindow());
+        GoBackCommand = new RelayCommand(_ => goBack());
 
         _ = LoadUsersAsync();
     }
