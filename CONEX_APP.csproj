@@ -27,4 +27,17 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <Page Update="Presentation\Views\Activities\AddUserWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <XamlRuntime>Wpf</XamlRuntime>
+      <SubType>Designer</SubType>
+    </Page>
+    <Page Update="Presentation\Views\Activities\AddActivityWindow.xaml">
+      <Generator>MSBuild:Compile</Generator>
+      <XamlRuntime>Wpf</XamlRuntime>
+      <SubType>Designer</SubType>
+    </Page>
+  </ItemGroup>
+
 </Project>

@@ -15,7 +15,7 @@ public class CreateUserUseCase
 
     public async Task ExecuteAsync(CreateUserDto dto)
     {
-        var user = new User
+        User user = new User
         {
             Name = dto.FullName,
             Email = dto.Email,

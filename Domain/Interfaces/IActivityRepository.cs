@@ -1,6 +1,9 @@
+using CONEX_APP.Domain.Entities;
+
 namespace CONEX_APP.Domain.Interfaces;
 
-public class IActivityRepository
+public interface IActivityRepository
 {
-    
+    Task<IEnumerable<Activity>> GetAllAsync();
+    Task AddAsync(Activity activity);
 }

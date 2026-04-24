@@ -1,3 +1,4 @@
+using CONEX_APP.Domain.Entities;
 using CONEX_APP.MainApplication.DTOs;
 using CONEX_APP.Domain.Interfaces;
 
@@ -14,8 +15,8 @@ public class GetUsersUseCase
 
     public async Task<IEnumerable<UserDto>> ExecuteAsync()
     {
-        var users = await _userRepository.GetAllAsync();
-        
+        IEnumerable<User> users = await _userRepository.GetAllAsync();
+
         return users.Select(u => new UserDto 
         {
             Id = u.Id,

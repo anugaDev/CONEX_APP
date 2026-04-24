@@ -9,6 +9,8 @@
         xmlns:views="clr-namespace:CONEX_APP.Presentation.Views"
         xmlns:views_users="clr-namespace:CONEX_APP.Presentation.Views.Users"
         xmlns:views_classes="clr-namespace:CONEX_APP.Presentation.Views.Classes"
+        xmlns:viewmodels_activities="clr-namespace:CONEX_APP.Presentation.ViewModels.Activities"
+        xmlns:views_activities="clr-namespace:CONEX_APP.Presentation.Views.Activities"
         mc:Ignorable="d"
         Title="CONEX APP" Height="450" Width="800" WindowStartupLocation="CenterScreen">
     
@@ -21,6 +23,9 @@
         </DataTemplate>
         <DataTemplate DataType="{x:Type viewmodels_classes:ClassListViewModel}">
             <views_classes:ClassListView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type viewmodels_activities:ActivityScheduleViewModel}">
+            <views_activities:ActivityScheduleView />
         </DataTemplate>
     </Window.Resources>
 
