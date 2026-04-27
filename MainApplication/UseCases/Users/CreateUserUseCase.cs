@@ -17,9 +17,17 @@ public class CreateUserUseCase
     {
         User user = new User
         {
-            Name = dto.FullName,
+            Name = dto.Name,
+            Surname = dto.Surname,
+            SecondSurname = dto.SecondSurname,
+            IdCard = dto.IdCard,
+            Address = dto.Address,
+            Location = dto.Location,
+            Phone = dto.Phone,
             Email = dto.Email,
-            CreatedAt = DateTime.UtcNow
+            IsPartner = dto.IsPartner,
+            CreatedAt = DateTime.UtcNow,
+            DischargedAt = DateTime.MinValue
         };
 
         await _userRepository.AddAsync(user);

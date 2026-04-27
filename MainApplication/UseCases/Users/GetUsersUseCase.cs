@@ -20,8 +20,15 @@ public class GetUsersUseCase
         return users.Select(u => new UserDto 
         {
             Id = u.Id,
-            FullName = u.Name,
-            Email = u.Email
+            Name = u.Name,
+            Surname = u.Surname,
+            SecondSurname = u.SecondSurname,
+            IdCard = u.IdCard,
+            Address = u.Address,
+            Location = u.Location,
+            Phone = u.Phone,
+            Email = u.Email,
+            IsPartner = u.IsPartner
         });
     }
 }

@@ -21,7 +21,7 @@ public class CreateActivityUseCase
             Tutor = dto.Tutor,
             Classroom = dto.Classroom,
             Date = dto.Date,
-            CreatedAt = DateTime.UtcNow
+            CreatedAt = DateTime.UtcNow,
         };
 
         await _activityRepository.AddAsync(user);

@@ -16,7 +16,7 @@
         </Grid.RowDefinitions>
 
         <TextBlock Grid.Row="0" Text="Nombre de la Actividad:" Margin="0,0,0,5"/>
-        <TextBox Grid.Row="1" Text="{Binding FullName, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10" Padding="5"/>
+        <TextBox Grid.Row="1" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10" Padding="5"/>
 
         <TextBlock Grid.Row="2" Text="Tutor:" Margin="0,0,0,5"/>
         <TextBox Grid.Row="3" Text="{Binding Tutor, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10" Padding="5"/>

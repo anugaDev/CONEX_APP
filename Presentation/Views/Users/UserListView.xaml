@@ -20,8 +20,13 @@
         <DataGrid Grid.Row="2" ItemsSource="{Binding Users}" AutoGenerateColumns="False" IsReadOnly="True">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="50"/>
-                <DataGridTextColumn Header="Nombre" Binding="{Binding FullName}" Width="*"/>
-                <DataGridTextColumn Header="Correo Electrónico" Binding="{Binding Email}" Width="*"/>
+                <DataGridTextColumn Header="Nombre" Binding="{Binding Name}" Width="100"/>
+                <DataGridTextColumn Header="Primer Apellido" Binding="{Binding Surname}" Width="120"/>
+                <DataGridTextColumn Header="Segundo Apellido" Binding="{Binding SecondSurname}" Width="120"/>
+                <DataGridTextColumn Header="DNI" Binding="{Binding IdCard}" Width="100"/>
+                <DataGridTextColumn Header="Teléfono" Binding="{Binding Phone}" Width="100"/>
+                <DataGridTextColumn Header="Correo Electrónico" Binding="{Binding Email}" Width="150"/>
+                <DataGridCheckBoxColumn Header="Socio" Binding="{Binding IsPartner}" Width="50"/>
             </DataGrid.Columns>
         </DataGrid>
     </Grid>
