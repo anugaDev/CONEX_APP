@@ -75,6 +75,7 @@ public partial class MainWindow : Window
         _mainViewModel.CurrentViewModel = new ActivityScheduleViewModel(
             _getActivityUseCase,
             _createActivityUseCase,
+            _getUsersUseCase,
             goBack: NavigateToHome
         );
     }

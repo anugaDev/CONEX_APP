@@ -23,6 +23,9 @@ public class UserDto
     public bool IsPartner {  get; set; }
 
     public bool IsTutor { get; set; }
+
+    public string FullName => $"{Name} {Surname}";
+    
     public DateTime CreatedAt { get; set; }
 
     public DateTime DischargedAt { get; set; }

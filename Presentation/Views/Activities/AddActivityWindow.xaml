@@ -19,7 +19,7 @@
         <TextBox Grid.Row="1" Text="{Binding Name, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10" Padding="5"/>
 
         <TextBlock Grid.Row="2" Text="Tutor:" Margin="0,0,0,5"/>
-        <TextBox Grid.Row="3" Text="{Binding Tutor, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10" Padding="5"/>
+        <ComboBox Grid.Row="3" ItemsSource="{Binding Tutors}" SelectedItem="{Binding SelectedTutor, UpdateSourceTrigger=PropertyChanged}" DisplayMemberPath="FullName" Margin="0,0,0,10" Padding="5"/>
 
         <TextBlock Grid.Row="4" Text="Aula:" Margin="0,0,0,5"/>
         <TextBox Grid.Row="5" Text="{Binding Classroom, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10" Padding="5"/>

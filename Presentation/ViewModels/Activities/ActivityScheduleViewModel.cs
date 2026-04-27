@@ -15,16 +15,19 @@ public class ActivityScheduleViewModel : ViewModelBase
 
     private readonly CreateActivityUseCase _createActivityUseCase;
 
+    private readonly GetUsersUseCase _getUsersUseCase;
+
     public ObservableCollection<ActivityScheduleDto> ActivitySchedule { get; set; }
 
     public ICommand OpenAddUserWindowCommand { get; }
 
     public ICommand GoBackCommand { get; }
 
-    public ActivityScheduleViewModel(GetActivityUseCase getActivitiesUseCase, CreateActivityUseCase createActivityUseCase, Action goBack)
+    public ActivityScheduleViewModel(GetActivityUseCase getActivitiesUseCase, CreateActivityUseCase createActivityUseCase, GetUsersUseCase getUsersUseCase, Action goBack)
     {
         _getActivitiesUseCase = getActivitiesUseCase;
         _createActivityUseCase = createActivityUseCase;
+        _getUsersUseCase = getUsersUseCase;
         ActivitySchedule = new ObservableCollection<ActivityScheduleDto>();
         
         OpenAddUserWindowCommand = new RelayCommand(_ => OpenAddUserWindow());
@@ -35,7 +38,7 @@ public class ActivityScheduleViewModel : ViewModelBase
 
     private void OpenAddUserWindow()
     {
-        var addUserViewModel = new AddActivityViewModel(_createActivityUseCase);
+        var addUserViewModel = new AddActivityViewModel(_createActivityUseCase, _getUsersUseCase);
         var addUserWindow = new AddActivityWindow(addUserViewModel);
         
         addUserWindow.ShowDialog();
