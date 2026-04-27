@@ -24,8 +24,11 @@
         <TextBlock Grid.Row="4" Text="Aula:" Margin="0,0,0,5"/>
         <TextBox Grid.Row="5" Text="{Binding Classroom, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10" Padding="5"/>
 
-        <TextBlock Grid.Row="6" Text="Fecha:" Margin="0,0,0,5"/>
-        <DatePicker Grid.Row="7" SelectedDate="{Binding Date, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,15" Padding="5"/>
+        <TextBlock Grid.Row="6" Text="Día y Hora:" Margin="0,0,0,5"/>
+        <StackPanel Grid.Row="7" Orientation="Horizontal" Margin="0,0,0,15">
+            <ComboBox ItemsSource="{Binding DaysOfWeek}" SelectedItem="{Binding SelectedDay}" Width="150" Margin="0,0,10,0" Padding="5"/>
+            <ComboBox ItemsSource="{Binding Times}" SelectedItem="{Binding SelectedTime}" Width="100" Padding="5"/>
+        </StackPanel>
 
         <StackPanel Grid.Row="8" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom">
             <Button Content="Cancelar" Command="{Binding CancelCommand}" Width="80" Margin="0,0,10,0" Padding="5"/>

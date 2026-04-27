@@ -4,6 +4,7 @@ using CONEX_APP.MainApplication.DTOs;
 using CONEX_APP.MainApplication.UseCases.Activities;
 using CONEX_APP.MainApplication.UseCases.Users;
 using CONEX_APP.Presentation.Commands;
+using CONEX_APP.Presentation.Helpers;
 
 namespace CONEX_APP.Presentation.ViewModels.Activities;
 
@@ -18,11 +19,28 @@ public class AddActivityViewModel : ViewModelBase
 
     private string _name = string.Empty;
 
-    private string _tutor = string.Empty;
-
     private string _classRoom = string.Empty;
 
-    private DateTime _date = DateTime.Now;
+    public ObservableCollection<string> DaysOfWeek { get; } = new() 
+    { 
+        "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo" 
+    };
+
+    private string _selectedDay = "Lunes";
+    public string SelectedDay 
+    {
+        get => _selectedDay;
+        set => SetProperty(ref _selectedDay, value);
+    }
+
+    public ObservableCollection<string> Times { get; } = new();
+
+    private string _selectedTime = "12:00";
+    public string SelectedTime 
+    {
+        get => _selectedTime;
+        set => SetProperty(ref _selectedTime, value);
+    }
     
     public string FullName
     {
@@ -46,12 +64,6 @@ public class AddActivityViewModel : ViewModelBase
         get => _classRoom;
         set => SetProperty(ref _classRoom, value);
     }
-    
-    public DateTime Date
-    {
-        get => _date;
-        set => SetProperty(ref _date, value);
-    }
 
     public ICommand SaveCommand { get; }
     public ICommand CancelCommand { get; }
@@ -64,7 +76,20 @@ public class AddActivityViewModel : ViewModelBase
         SaveCommand = new RelayCommand(async _ => await SaveAsync(), _ => CanSave());
         CancelCommand = new RelayCommand(_ => Cancel());
 
+        PopulateTimes();
         _ = LoadTutorsAsync();
+    }
+
+    private void PopulateTimes()
+    {
+        DateTime startTime = DateTime.Today.AddHours(12); // 12:00 PM
+        DateTime endTime = DateTime.Today.AddHours(21);   // 9:00 PM
+        
+        while(startTime <= endTime) 
+        {
+            Times.Add(startTime.ToString("HH:mm"));
+            startTime = startTime.AddMinutes(30);
+        }
     }
 
     private async Task LoadTutorsAsync()
@@ -87,13 +112,22 @@ public class AddActivityViewModel : ViewModelBase
     private bool CanSave()
     {
         return !string.IsNullOrWhiteSpace(FullName) && SelectedTutor != null 
-                                                    && !string.IsNullOrWhiteSpace(Classroom);
+                                                    && !string.IsNullOrWhiteSpace(Classroom)
+                                                    && !string.IsNullOrWhiteSpace(SelectedDay)
+                                                    && !string.IsNullOrWhiteSpace(SelectedTime);
     }
     
-
     private async Task SaveAsync()
     {
-        CreateActivityDto dto = new CreateActivityDto() { Name = FullName, Tutor = SelectedTutor!.FullName, Classroom = _classRoom, Date = _date };
+        var dateCalculator = new ActivityDateCalculator();
+
+        CreateActivityDto dto = new CreateActivityDto() 
+        { 
+            Name = FullName, 
+            Tutor = SelectedTutor!.FullName, 
+            Classroom = _classRoom, 
+            Date = dateCalculator.GetNextOccurrence(SelectedDay, SelectedTime) 
+        };
         await _createActivityUseCase.ExecuteAsync(dto);
         
         WasSaved = true;
