@@ -29,7 +29,8 @@ public class GetUsersUseCase
             Phone = u.Phone,
             Email = u.Email,
             IsPartner = u.IsPartner,
-            IsTutor = u.IsTutor
+            IsTutor = u.IsTutor,
+            EnrolledActivityIds = u.Activities.Select(a => a.Id).ToList()
         });
     }
 }

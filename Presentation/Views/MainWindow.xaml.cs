@@ -17,6 +17,7 @@ public partial class MainWindow : Window
     private readonly UserRepository _userRepository;
     private readonly GetUsersUseCase _getUsersUseCase;
     private readonly CreateUserUseCase _createUserUseCase;
+    private readonly UpdateUserUseCase _updateUserUseCase;
     private readonly DeleteUserUseCase _deleteUserUseCase;
     private readonly GetActivityUseCase _getActivityUseCase;
     private readonly CreateActivityUseCase _createActivityUseCase;
@@ -43,6 +44,7 @@ public partial class MainWindow : Window
         _userRepository = new UserRepository(_dbContext);
         _getUsersUseCase = new GetUsersUseCase(_userRepository);
         _createUserUseCase = new CreateUserUseCase(_userRepository);
+        _updateUserUseCase = new UpdateUserUseCase(_userRepository);
         _deleteUserUseCase = new DeleteUserUseCase(_userRepository);
 
         var activityRepository = new ActivityRepository(_dbContext);
@@ -70,6 +72,7 @@ public partial class MainWindow : Window
         _mainViewModel.CurrentViewModel = new UserListViewModel(
             _getUsersUseCase, 
             _createUserUseCase, 
+            _updateUserUseCase,
             _deleteUserUseCase,
             _getActivityUseCase,
             goBack: NavigateToHome

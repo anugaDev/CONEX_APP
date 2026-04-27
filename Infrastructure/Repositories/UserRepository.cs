@@ -16,7 +16,7 @@ public class UserRepository : IUserRepository
 
     public async Task<IEnumerable<User>> GetAllAsync()
     {
-        return await _context.Users.ToListAsync();
+        return await _context.Users.Include(u => u.Activities).ToListAsync();
     }
 
     public async Task AddAsync(User user, IEnumerable<int>? activityIds = null)
@@ -29,6 +29,38 @@ public class UserRepository : IUserRepository
 
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
+    }
+
+    public async Task UpdateAsync(User user, IEnumerable<int>? activityIds = null)
+    {
+        // Limpiamos las actividades actuales y metemos las nuevas si hay
+        if (activityIds != null)
+        {
+            var trackedUser = await _context.Users.Include(u => u.Activities).FirstOrDefaultAsync(u => u.Id == user.Id);
+            if (trackedUser != null)
+            {
+                trackedUser.Name = user.Name;
+                trackedUser.Surname = user.Surname;
+                trackedUser.SecondSurname = user.SecondSurname;
+                trackedUser.IdCard = user.IdCard;
+                trackedUser.Address = user.Address;
+                trackedUser.Location = user.Location;
+                trackedUser.Email = user.Email;
+                trackedUser.Phone = user.Phone;
+                trackedUser.IsPartner = user.IsPartner;
+                trackedUser.IsTutor = user.IsTutor;
+
+                var activities = await _context.Activities.Where(a => activityIds.Contains(a.Id)).ToListAsync();
+                trackedUser.Activities = activities;
+                
+                await _context.SaveChangesAsync();
+            }
+        }
+        else
+        {
+            _context.Users.Update(user);
+            await _context.SaveChangesAsync();
+        }
     }
 
     public async Task DeleteAsync(int id)

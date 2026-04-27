@@ -12,6 +12,7 @@ public class UserListViewModel : ViewModelBase
 {
     private readonly GetUsersUseCase _getUsersUseCase;
     private readonly CreateUserUseCase _createUserUseCase;
+    private readonly UpdateUserUseCase _updateUserUseCase;
     private readonly DeleteUserUseCase _deleteUserUseCase;
     private readonly GetActivityUseCase _getActivityUseCase;
 
@@ -25,18 +26,21 @@ public class UserListViewModel : ViewModelBase
     }
 
     public ICommand OpenAddUserWindowCommand { get; }
+    public ICommand EditUserCommand { get; }
     public ICommand DeleteUserCommand { get; }
     public ICommand GoBackCommand { get; }
 
-    public UserListViewModel(GetUsersUseCase getUsersUseCase, CreateUserUseCase createUserUseCase, DeleteUserUseCase deleteUserUseCase, GetActivityUseCase getActivityUseCase, Action goBack)
+    public UserListViewModel(GetUsersUseCase getUsersUseCase, CreateUserUseCase createUserUseCase, UpdateUserUseCase updateUserUseCase, DeleteUserUseCase deleteUserUseCase, GetActivityUseCase getActivityUseCase, Action goBack)
     {
         _getUsersUseCase = getUsersUseCase;
         _createUserUseCase = createUserUseCase;
+        _updateUserUseCase = updateUserUseCase;
         _deleteUserUseCase = deleteUserUseCase;
         _getActivityUseCase = getActivityUseCase;
         Users = new ObservableCollection<UserDto>();
         
         OpenAddUserWindowCommand = new RelayCommand(_ => OpenAddUserWindow());
+        EditUserCommand = new RelayCommand(_ => EditUser(), _ => SelectedUser != null);
         DeleteUserCommand = new RelayCommand(async _ => await DeleteUserAsync(), _ => SelectedUser != null);
         GoBackCommand = new RelayCommand(_ => goBack());
 
@@ -45,7 +49,7 @@ public class UserListViewModel : ViewModelBase
 
     private void OpenAddUserWindow()
     {
-        var addUserViewModel = new AddUserViewModel(_createUserUseCase, _getActivityUseCase);
+        var addUserViewModel = new AddUserViewModel(_createUserUseCase, _updateUserUseCase, _getActivityUseCase);
         var addUserWindow = new AddUserWindow(addUserViewModel);
         
         addUserWindow.ShowDialog();
@@ -53,6 +57,22 @@ public class UserListViewModel : ViewModelBase
         if (addUserViewModel.WasSaved)
         {
             _ = LoadUsersAsync();
+        }
+    }
+
+    private void EditUser()
+    {
+        if (SelectedUser != null)
+        {
+            var addUserViewModel = new AddUserViewModel(_createUserUseCase, _updateUserUseCase, _getActivityUseCase, SelectedUser);
+            var addUserWindow = new AddUserWindow(addUserViewModel);
+            
+            addUserWindow.ShowDialog();
+
+            if (addUserViewModel.WasSaved)
+            {
+                _ = LoadUsersAsync();
+            }
         }
     }
 

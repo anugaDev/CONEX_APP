@@ -11,7 +11,11 @@ namespace CONEX_APP.Presentation.ViewModels.Users;
 public class AddUserViewModel : ViewModelBase
 {
     private readonly CreateUserUseCase _createUserUseCase;
+    private readonly UpdateUserUseCase _updateUserUseCase;
     private readonly GetActivityUseCase _getActivityUseCase;
+
+    private readonly int? _editingUserId;
+
     public Action? CloseAction { get; set; }
     public bool WasSaved { get; private set; }
 
@@ -118,18 +122,34 @@ public class AddUserViewModel : ViewModelBase
     public ICommand SaveCommand { get; }
     public ICommand CancelCommand { get; }
 
-    public AddUserViewModel(CreateUserUseCase createUserUseCase, GetActivityUseCase getActivityUseCase)
+    public AddUserViewModel(CreateUserUseCase createUserUseCase, UpdateUserUseCase updateUserUseCase, GetActivityUseCase getActivityUseCase, UserDto? userToEdit = null)
     {
         _createUserUseCase = createUserUseCase;
+        _updateUserUseCase = updateUserUseCase;
         _getActivityUseCase = getActivityUseCase;
         
         SaveCommand = new RelayCommand(async _ => await SaveAsync(), _ => CanSave());
         CancelCommand = new RelayCommand(_ => Cancel());
 
-        _ = LoadActivitiesAsync();
+        if (userToEdit != null)
+        {
+            _editingUserId = userToEdit.Id;
+            _name = userToEdit.Name;
+            _surname = userToEdit.Surname;
+            _secondSurname = userToEdit.SecondSurname;
+            _idCard = userToEdit.IdCard;
+            _phone = userToEdit.Phone;
+            _email = userToEdit.Email;
+            _address = userToEdit.Address;
+            _location = userToEdit.Location;
+            _isPartner = userToEdit.IsPartner;
+            _isTutor = userToEdit.IsTutor;
+        }
+
+        _ = LoadActivitiesAsync(userToEdit?.EnrolledActivityIds);
     }
 
-    private async Task LoadActivitiesAsync()
+    private async Task LoadActivitiesAsync(List<int>? enrolledActivityIds = null)
     {
         try
         {
@@ -139,7 +159,11 @@ public class AddUserViewModel : ViewModelBase
 
             foreach (var act in activities)
             {
-                if (act.EnrolledStudentsCount < act.MaxStudents)
+                if (enrolledActivityIds != null && enrolledActivityIds.Contains(act.Id))
+                {
+                    SelectedActivities.Add(act);
+                }
+                else if (act.EnrolledStudentsCount < act.MaxStudents)
                 {
                     AvailableActivities.Add(act);
                 }
@@ -158,8 +182,30 @@ public class AddUserViewModel : ViewModelBase
 
     private async Task SaveAsync()
     {
-        CreateUserDto dto = GetNewUSerDto();
-        await _createUserUseCase.ExecuteAsync(dto);
+        if (_editingUserId.HasValue)
+        {
+            var dto = new UpdateUserDto
+            {
+                Id = _editingUserId.Value,
+                Name = Name, 
+                Surname = Surname,
+                SecondSurname = SecondSurname,
+                Email = Email,
+                Phone = Phone,
+                Address = Address,
+                Location = Location,
+                IdCard = IdCard,
+                IsPartner = IsPartner,
+                IsTutor = IsTutor,
+                SelectedActivityIds = SelectedActivities.Select(a => a.Id).ToList()
+            };
+            await _updateUserUseCase.ExecuteAsync(dto);
+        }
+        else
+        {
+            CreateUserDto dto = GetNewUSerDto();
+            await _createUserUseCase.ExecuteAsync(dto);
+        }
         WasSaved = true;
         CloseAction?.Invoke();
     }
