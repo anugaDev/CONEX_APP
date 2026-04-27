@@ -22,6 +22,7 @@ public class User
     
     public bool IsPartner {get; set; }
 
+    public bool IsTutor { get; set; }
     public DateTime CreatedAt { get; set; }
     
     public DateTime DischargedAt { get; set; }

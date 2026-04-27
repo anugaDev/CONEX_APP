@@ -28,6 +28,8 @@ public class AddUserViewModel : ViewModelBase
     private string _email = string.Empty;
     
     private bool _isPartner = false;
+    
+    private bool _isTutor = false;
 
     
     public string Name
@@ -84,6 +86,12 @@ public class AddUserViewModel : ViewModelBase
         set => SetProperty(ref _isPartner, value);
     }
 
+    public bool IsTutor
+    {
+        get => _isTutor;
+        set => SetProperty(ref _isTutor, value);
+    }
+
     public ICommand SaveCommand { get; }
     public ICommand CancelCommand { get; }
 
@@ -118,7 +126,8 @@ public class AddUserViewModel : ViewModelBase
             Address = Address,
             Location = Location,
             IdCard = IdCard,
-            IsPartner = IsPartner
+            IsPartner = IsPartner,
+            IsTutor = IsTutor
         };
     }
 

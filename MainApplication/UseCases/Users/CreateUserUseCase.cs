@@ -26,6 +26,7 @@ public class CreateUserUseCase
             Phone = dto.Phone,
             Email = dto.Email,
             IsPartner = dto.IsPartner,
+            IsTutor = dto.IsTutor,
             CreatedAt = DateTime.UtcNow,
             DischargedAt = DateTime.MinValue
         };

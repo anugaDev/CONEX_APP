@@ -34,7 +34,8 @@
                 <TextBlock Text="Localidad:" Margin="0,0,0,5"/>
                 <TextBox Text="{Binding Location, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,15" Padding="5"/>
 
-                <CheckBox Content="Es Socio" IsChecked="{Binding IsPartner}" Margin="0,0,0,20"/>
+                <CheckBox Content="Es Socio" IsChecked="{Binding IsPartner}" Margin="0,0,0,10"/>
+                <CheckBox Content="Es Tutor" IsChecked="{Binding IsTutor}" Margin="0,0,0,20"/>
             </StackPanel>
         </ScrollViewer>
 

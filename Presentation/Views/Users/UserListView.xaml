@@ -27,6 +27,7 @@
                 <DataGridTextColumn Header="Teléfono" Binding="{Binding Phone}" Width="100"/>
                 <DataGridTextColumn Header="Correo Electrónico" Binding="{Binding Email}" Width="150"/>
                 <DataGridCheckBoxColumn Header="Socio" Binding="{Binding IsPartner}" Width="50"/>
+                <DataGridCheckBoxColumn Header="Tutor" Binding="{Binding IsTutor}" Width="50"/>
             </DataGrid.Columns>
         </DataGrid>
     </Grid>

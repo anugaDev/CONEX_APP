@@ -28,7 +28,8 @@ public class GetUsersUseCase
             Location = u.Location,
             Phone = u.Phone,
             Email = u.Email,
-            IsPartner = u.IsPartner
+            IsPartner = u.IsPartner,
+            IsTutor = u.IsTutor
         });
     }
 }
