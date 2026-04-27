@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 using CONEX_APP.MainApplication.DTOs;
+using CONEX_APP.Application.DTOs;
 using CONEX_APP.MainApplication.UseCases.Activities;
 using CONEX_APP.MainApplication.UseCases.Users;
 using CONEX_APP.Presentation.Commands;
@@ -11,7 +12,10 @@ namespace CONEX_APP.Presentation.ViewModels.Activities;
 public class AddActivityViewModel : ViewModelBase
 {
     private readonly CreateActivityUseCase _createActivityUseCase;
+    private readonly UpdateActivityUseCase _updateActivityUseCase;
     private readonly GetUsersUseCase _getUsersUseCase;
+
+    private readonly int? _editingActivityId;
 
     public Action? CloseAction { get; set; }
 
@@ -72,19 +76,39 @@ public class AddActivityViewModel : ViewModelBase
         set => SetProperty(ref _classRoom, value);
     }
 
+    public ObservableCollection<string> EnrolledStudents { get; } = new();
+
     public ICommand SaveCommand { get; }
     public ICommand CancelCommand { get; }
 
-    public AddActivityViewModel(CreateActivityUseCase createActivityUseCase, GetUsersUseCase getUsersUseCase)
+    public AddActivityViewModel(CreateActivityUseCase createActivityUseCase, UpdateActivityUseCase updateActivityUseCase, GetUsersUseCase getUsersUseCase, ActivityScheduleDto? activityToEdit = null)
     {
         _createActivityUseCase = createActivityUseCase;
+        _updateActivityUseCase = updateActivityUseCase;
         _getUsersUseCase = getUsersUseCase;
         
         SaveCommand = new RelayCommand(async _ => await SaveAsync(), _ => CanSave());
         CancelCommand = new RelayCommand(_ => Cancel());
 
         PopulateTimes();
-        _ = LoadTutorsAsync();
+
+        if (activityToEdit != null)
+        {
+            _editingActivityId = activityToEdit.Id;
+            _name = activityToEdit.Name;
+            _classRoom = activityToEdit.Classroom;
+            _maxStudents = activityToEdit.MaxStudents;
+            _selectedDay = activityToEdit.Date.ToString("dddd"); // Capitalize might be needed depending on culture, but combobox ignores it usually, actually culture might return "lunes". We use "Lunes".
+            _selectedDay = char.ToUpper(_selectedDay[0]) + _selectedDay.Substring(1); 
+            _selectedTime = activityToEdit.Date.ToString("HH:mm");
+
+            foreach (var student in activityToEdit.EnrolledStudentNames)
+            {
+                EnrolledStudents.Add(student);
+            }
+        }
+
+        _ = LoadTutorsAsync(activityToEdit?.Tutor);
     }
 
     private void PopulateTimes()
@@ -99,7 +123,7 @@ public class AddActivityViewModel : ViewModelBase
         }
     }
 
-    private async Task LoadTutorsAsync()
+    private async Task LoadTutorsAsync(string? tutorToSelect = null)
     {
         try
         {
@@ -108,6 +132,10 @@ public class AddActivityViewModel : ViewModelBase
             foreach (var user in users.Where(u => u.IsTutor))
             {
                 Tutors.Add(user);
+                if (tutorToSelect != null && user.FullName == tutorToSelect)
+                {
+                    SelectedTutor = user;
+                }
             }
         }
         catch (System.Exception ex)
@@ -129,15 +157,31 @@ public class AddActivityViewModel : ViewModelBase
     {
         var dateCalculator = new ActivityDateCalculator();
 
-        CreateActivityDto dto = new CreateActivityDto() 
-        { 
-            Name = Name, 
-            Tutor = SelectedTutor!.FullName, 
-            Classroom = _classRoom, 
-            MaxStudents = _maxStudents,
-            Date = dateCalculator.GetNextOccurrence(SelectedDay, SelectedTime) 
-        };
-        await _createActivityUseCase.ExecuteAsync(dto);
+        if (_editingActivityId.HasValue)
+        {
+            UpdateActivityDto dto = new UpdateActivityDto()
+            {
+                Id = _editingActivityId.Value,
+                Name = Name, 
+                Tutor = SelectedTutor!.FullName, 
+                Classroom = _classRoom, 
+                MaxStudents = _maxStudents,
+                Date = dateCalculator.GetNextOccurrence(SelectedDay, SelectedTime) 
+            };
+            await _updateActivityUseCase.ExecuteAsync(dto);
+        }
+        else
+        {
+            CreateActivityDto dto = new CreateActivityDto() 
+            { 
+                Name = Name, 
+                Tutor = SelectedTutor!.FullName, 
+                Classroom = _classRoom, 
+                MaxStudents = _maxStudents,
+                Date = dateCalculator.GetNextOccurrence(SelectedDay, SelectedTime) 
+            };
+            await _createActivityUseCase.ExecuteAsync(dto);
+        }
         
         WasSaved = true;
         CloseAction?.Invoke();

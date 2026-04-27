@@ -1,9 +1,11 @@
 <Window x:Class="CONEX_APP.Presentation.Views.Activities.AddActivityWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Añadir Nueva Actividad" Height="420" Width="400" WindowStartupLocation="CenterOwner" ResizeMode="NoResize">
+        Title="Añadir Nueva Actividad" Height="520" Width="400" WindowStartupLocation="CenterOwner" ResizeMode="NoResize">
     <Grid Margin="20">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -35,7 +37,10 @@
             <ComboBox ItemsSource="{Binding Times}" SelectedItem="{Binding SelectedTime}" Width="100" Padding="5"/>
         </StackPanel>
 
-        <StackPanel Grid.Row="10" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom">
+        <TextBlock Grid.Row="10" Text="Alumnos Apuntados:" Margin="0,0,0,5" FontSize="11" Foreground="Gray"/>
+        <ListBox Grid.Row="11" ItemsSource="{Binding EnrolledStudents}" Height="60" Margin="0,0,0,15"/>
+
+        <StackPanel Grid.Row="12" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom">
             <Button Content="Cancelar" Command="{Binding CancelCommand}" Width="80" Margin="0,0,10,0" Padding="5"/>
             <Button Content="Guardar" Command="{Binding SaveCommand}" Width="80" Padding="5" Background="#007ACC" Foreground="White"/>
         </StackPanel>

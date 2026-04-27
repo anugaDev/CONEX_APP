@@ -1,0 +1,13 @@
+using System;
+
+namespace CONEX_APP.MainApplication.DTOs;
+
+public class UpdateActivityDto
+{
+    public int Id { get; set; }
+    public string Name { get; set; } = string.Empty;
+    public string Tutor { get; set; } = string.Empty;
+    public string Classroom { get; set; } = string.Empty;
+    public DateTime Date { get; set; }
+    public int MaxStudents { get; set; }
+}

@@ -18,6 +18,8 @@ public class ActivityScheduleDto
     
     public string Occupancy => $"{EnrolledStudentsCount} / {MaxStudents}";
     
+    public List<string> EnrolledStudentNames { get; set; } = new();
+    
     public DateTime CreatedAt { get; set; }
 
 }

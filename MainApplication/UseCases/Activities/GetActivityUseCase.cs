@@ -25,7 +25,8 @@ public class GetActivityUseCase
             Date = activity.Date,
             Classroom = activity.Classroom,
             MaxStudents = activity.MaxStudents,
-            EnrolledStudentsCount = activity.Students.Count
+            EnrolledStudentsCount = activity.Students.Count,
+            EnrolledStudentNames = activity.Students.Select(s => $"{s.Name} {s.Surname}").ToList()
         });
     }
 }
