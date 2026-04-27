@@ -21,6 +21,9 @@ public class CreateUserDto
     public bool IsPartner {get; set; }
 
     public bool IsTutor { get; set; }
+
+    public List<int> SelectedActivityIds { get; set; } = new();
+
     public DateTime CreatedAt { get; set; }
     
     public DateTime DischargedAt { get; set; }

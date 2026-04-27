@@ -13,6 +13,7 @@ public class UserListViewModel : ViewModelBase
     private readonly GetUsersUseCase _getUsersUseCase;
 
     private readonly CreateUserUseCase _createUserUseCase;
+    private readonly GetActivityUseCase _getActivityUseCase;
 
     public ObservableCollection<UserDto> Users { get; set; }
 
@@ -20,10 +21,11 @@ public class UserListViewModel : ViewModelBase
 
     public ICommand GoBackCommand { get; }
 
-    public UserListViewModel(GetUsersUseCase getUsersUseCase, CreateUserUseCase createUserUseCase, Action goBack)
+    public UserListViewModel(GetUsersUseCase getUsersUseCase, CreateUserUseCase createUserUseCase, GetActivityUseCase getActivityUseCase, Action goBack)
     {
         _getUsersUseCase = getUsersUseCase;
         _createUserUseCase = createUserUseCase;
+        _getActivityUseCase = getActivityUseCase;
         Users = new ObservableCollection<UserDto>();
         
         OpenAddUserWindowCommand = new RelayCommand(_ => OpenAddUserWindow());
@@ -34,7 +36,7 @@ public class UserListViewModel : ViewModelBase
 
     private void OpenAddUserWindow()
     {
-        var addUserViewModel = new AddUserViewModel(_createUserUseCase);
+        var addUserViewModel = new AddUserViewModel(_createUserUseCase, _getActivityUseCase);
         var addUserWindow = new AddUserWindow(addUserViewModel);
         
         addUserWindow.ShowDialog();

@@ -24,6 +24,7 @@
                 <DataGridTextColumn Header="Tutor" Binding="{Binding Tutor}" Width="*"/>
                 <DataGridTextColumn Header="Aula" Binding="{Binding Classroom}" Width="100"/>
                 <DataGridTextColumn Header="Día y Hora" Binding="{Binding Date, StringFormat={}{0:dddd HH:mm}}" Width="150"/>
+                <DataGridTextColumn Header="Apuntados / Máx" Binding="{Binding Occupancy}" Width="130"/>
             </DataGrid.Columns>
         </DataGrid>
     </Grid>

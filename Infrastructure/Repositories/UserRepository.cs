@@ -19,8 +19,14 @@ public class UserRepository : IUserRepository
         return await _context.Users.ToListAsync();
     }
 
-    public async Task AddAsync(User user)
+    public async Task AddAsync(User user, IEnumerable<int>? activityIds = null)
     {
+        if (activityIds != null && activityIds.Any())
+        {
+            var activities = await _context.Activities.Where(a => activityIds.Contains(a.Id)).ToListAsync();
+            user.Activities = activities;
+        }
+
         _context.Users.Add(user);
         await _context.SaveChangesAsync();
     }

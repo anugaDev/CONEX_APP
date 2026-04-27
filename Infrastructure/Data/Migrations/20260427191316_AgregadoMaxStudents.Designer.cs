@@ -3,34 +3,22 @@ using System;
 using CONEX_APP.Infrastructure.Data.Context;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
 
-namespace CONEX_APP.Migrations
+namespace CONEX_APP.Infrastructure.Data.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260427191316_AgregadoMaxStudents")]
+    partial class AgregadoMaxStudents
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder.HasAnnotation("ProductVersion", "8.0.4");
-
-            modelBuilder.Entity("ActivityUser", b =>
-                {
-                    b.Property<int>("ActivitiesId")
-                        .HasColumnType("INTEGER");
-
-                    b.Property<int>("StudentsId")
-                        .HasColumnType("INTEGER");
-
-                    b.HasKey("ActivitiesId", "StudentsId");
-
-                    b.HasIndex("StudentsId");
-
-                    b.ToTable("ActivityUser");
-                });
 
             modelBuilder.Entity("CONEX_APP.Domain.Entities.Activity", b =>
                 {
@@ -117,21 +105,6 @@ namespace CONEX_APP.Migrations
                     b.HasKey("Id");
 
                     b.ToTable("Users");
-                });
-
-            modelBuilder.Entity("ActivityUser", b =>
-                {
-                    b.HasOne("CONEX_APP.Domain.Entities.Activity", null)
-                        .WithMany()
-                        .HasForeignKey("ActivitiesId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("CONEX_APP.Domain.Entities.User", null)
-                        .WithMany()
-                        .HasForeignKey("StudentsId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
                 });
 #pragma warning restore 612, 618
         }

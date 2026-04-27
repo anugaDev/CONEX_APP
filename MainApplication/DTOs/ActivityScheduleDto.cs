@@ -12,6 +12,12 @@ public class ActivityScheduleDto
     
     public DateTime Date {get; set; }
     
+    public int MaxStudents { get; set; }
+    
+    public int EnrolledStudentsCount { get; set; }
+    
+    public string Occupancy => $"{EnrolledStudentsCount} / {MaxStudents}";
+    
     public DateTime CreatedAt { get; set; }
 
 }

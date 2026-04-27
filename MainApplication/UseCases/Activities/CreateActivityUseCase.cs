@@ -21,6 +21,7 @@ public class CreateActivityUseCase
             Tutor = dto.Tutor,
             Classroom = dto.Classroom,
             Date = dto.Date,
+            MaxStudents = dto.MaxStudents,
             CreatedAt = DateTime.UtcNow,
         };
 

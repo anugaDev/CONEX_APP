@@ -21,6 +21,13 @@ public class AddActivityViewModel : ViewModelBase
 
     private string _classRoom = string.Empty;
 
+    private int _maxStudents = 10;
+    public int MaxStudents
+    {
+        get => _maxStudents;
+        set => SetProperty(ref _maxStudents, value);
+    }
+
     public ObservableCollection<string> DaysOfWeek { get; } = new() 
     { 
         "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo" 
@@ -42,7 +49,7 @@ public class AddActivityViewModel : ViewModelBase
         set => SetProperty(ref _selectedTime, value);
     }
     
-    public string FullName
+    public string Name
     {
         get => _name;
         set => SetProperty(ref _name, value);
@@ -111,10 +118,11 @@ public class AddActivityViewModel : ViewModelBase
 
     private bool CanSave()
     {
-        return !string.IsNullOrWhiteSpace(FullName) && SelectedTutor != null 
+        return !string.IsNullOrWhiteSpace(Name) && SelectedTutor != null 
                                                     && !string.IsNullOrWhiteSpace(Classroom)
                                                     && !string.IsNullOrWhiteSpace(SelectedDay)
-                                                    && !string.IsNullOrWhiteSpace(SelectedTime);
+                                                    && !string.IsNullOrWhiteSpace(SelectedTime)
+                                                    && MaxStudents > 0;
     }
     
     private async Task SaveAsync()
@@ -123,9 +131,10 @@ public class AddActivityViewModel : ViewModelBase
 
         CreateActivityDto dto = new CreateActivityDto() 
         { 
-            Name = FullName, 
+            Name = Name, 
             Tutor = SelectedTutor!.FullName, 
             Classroom = _classRoom, 
+            MaxStudents = _maxStudents,
             Date = dateCalculator.GetNextOccurrence(SelectedDay, SelectedTime) 
         };
         await _createActivityUseCase.ExecuteAsync(dto);

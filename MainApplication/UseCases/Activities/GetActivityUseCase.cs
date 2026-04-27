@@ -23,7 +23,9 @@ public class GetActivityUseCase
             Name = activity.Name,
             Tutor = activity.Tutor,
             Date = activity.Date,
-            Classroom = activity.Classroom
+            Classroom = activity.Classroom,
+            MaxStudents = activity.MaxStudents,
+            EnrolledStudentsCount = activity.Students.Count
         });
     }
 }

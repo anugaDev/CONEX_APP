@@ -66,6 +66,7 @@ public partial class MainWindow : Window
         _mainViewModel.CurrentViewModel = new UserListViewModel(
             _getUsersUseCase, 
             _createUserUseCase, 
+            _getActivityUseCase,
             goBack: NavigateToHome
         );
     }

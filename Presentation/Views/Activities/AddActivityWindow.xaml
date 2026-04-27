@@ -1,9 +1,11 @@
 <Window x:Class="CONEX_APP.Presentation.Views.Activities.AddActivityWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Añadir Nueva Actividad" Height="350" Width="400" WindowStartupLocation="CenterOwner" ResizeMode="NoResize">
+        Title="Añadir Nueva Actividad" Height="420" Width="400" WindowStartupLocation="CenterOwner" ResizeMode="NoResize">
     <Grid Margin="20">
         <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
@@ -24,13 +26,16 @@
         <TextBlock Grid.Row="4" Text="Aula:" Margin="0,0,0,5"/>
         <TextBox Grid.Row="5" Text="{Binding Classroom, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10" Padding="5"/>
 
-        <TextBlock Grid.Row="6" Text="Día y Hora:" Margin="0,0,0,5"/>
-        <StackPanel Grid.Row="7" Orientation="Horizontal" Margin="0,0,0,15">
+        <TextBlock Grid.Row="6" Text="Máx. Alumnos:" Margin="0,0,0,5"/>
+        <TextBox Grid.Row="7" Text="{Binding MaxStudents, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10" Padding="5"/>
+
+        <TextBlock Grid.Row="8" Text="Día y Hora:" Margin="0,0,0,5"/>
+        <StackPanel Grid.Row="9" Orientation="Horizontal" Margin="0,0,0,15">
             <ComboBox ItemsSource="{Binding DaysOfWeek}" SelectedItem="{Binding SelectedDay}" Width="150" Margin="0,0,10,0" Padding="5"/>
             <ComboBox ItemsSource="{Binding Times}" SelectedItem="{Binding SelectedTime}" Width="100" Padding="5"/>
         </StackPanel>
 
-        <StackPanel Grid.Row="8" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom">
+        <StackPanel Grid.Row="10" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Bottom">
             <Button Content="Cancelar" Command="{Binding CancelCommand}" Width="80" Margin="0,0,10,0" Padding="5"/>
             <Button Content="Guardar" Command="{Binding SaveCommand}" Width="80" Padding="5" Background="#007ACC" Foreground="White"/>
         </StackPanel>

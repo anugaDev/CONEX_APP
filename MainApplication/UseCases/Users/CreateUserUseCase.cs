@@ -31,6 +31,6 @@ public class CreateUserUseCase
             DischargedAt = DateTime.MinValue
         };
 
-        await _userRepository.AddAsync(user);
+        await _userRepository.AddAsync(user, dto.SelectedActivityIds);
     }
 }

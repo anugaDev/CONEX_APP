@@ -27,4 +27,5 @@ public class User
     
     public DateTime DischargedAt { get; set; }
 
+    public ICollection<Activity> Activities { get; set; } = new List<Activity>();
 }

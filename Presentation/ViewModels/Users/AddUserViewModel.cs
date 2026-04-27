@@ -1,5 +1,8 @@
+using System.Collections.ObjectModel;
 using System.Windows.Input;
 using CONEX_APP.MainApplication.DTOs;
+using CONEX_APP.Application.DTOs;
+using CONEX_APP.MainApplication.UseCases.Activities;
 using CONEX_APP.MainApplication.UseCases.Users;
 using CONEX_APP.Presentation.Commands;
 
@@ -8,6 +11,7 @@ namespace CONEX_APP.Presentation.ViewModels.Users;
 public class AddUserViewModel : ViewModelBase
 {
     private readonly CreateUserUseCase _createUserUseCase;
+    private readonly GetActivityUseCase _getActivityUseCase;
     public Action? CloseAction { get; set; }
     public bool WasSaved { get; private set; }
 
@@ -92,14 +96,60 @@ public class AddUserViewModel : ViewModelBase
         set => SetProperty(ref _isTutor, value);
     }
 
+    public ObservableCollection<ActivityScheduleDto> AvailableActivities { get; } = new();
+    public ObservableCollection<ActivityScheduleDto> SelectedActivities { get; } = new();
+
+    private ActivityScheduleDto? _selectedActivityToAdd;
+    public ActivityScheduleDto? SelectedActivityToAdd
+    {
+        get => _selectedActivityToAdd;
+        set 
+        {
+            SetProperty(ref _selectedActivityToAdd, value);
+            if (value != null)
+            {
+                SelectedActivities.Add(value);
+                AvailableActivities.Remove(value);
+                // Reseteamos el combobox
+                SetProperty(ref _selectedActivityToAdd, null);
+            }
+        }
+    }
+
     public ICommand SaveCommand { get; }
     public ICommand CancelCommand { get; }
 
-    public AddUserViewModel(CreateUserUseCase createUserUseCase)
+    public AddUserViewModel(CreateUserUseCase createUserUseCase, GetActivityUseCase getActivityUseCase)
     {
         _createUserUseCase = createUserUseCase;
+        _getActivityUseCase = getActivityUseCase;
+        
         SaveCommand = new RelayCommand(async _ => await SaveAsync(), _ => CanSave());
         CancelCommand = new RelayCommand(_ => Cancel());
+
+        _ = LoadActivitiesAsync();
+    }
+
+    private async Task LoadActivitiesAsync()
+    {
+        try
+        {
+            var activities = await _getActivityUseCase.ExecuteAsync();
+            AvailableActivities.Clear();
+            SelectedActivities.Clear();
+
+            foreach (var act in activities)
+            {
+                if (act.EnrolledStudentsCount < act.MaxStudents)
+                {
+                    AvailableActivities.Add(act);
+                }
+            }
+        }
+        catch (System.Exception ex)
+        {
+            System.Windows.MessageBox.Show($"Error cargando clases: {ex.Message}");
+        }
     }
 
     private bool CanSave()
@@ -127,7 +177,8 @@ public class AddUserViewModel : ViewModelBase
             Location = Location,
             IdCard = IdCard,
             IsPartner = IsPartner,
-            IsTutor = IsTutor
+            IsTutor = IsTutor,
+            SelectedActivityIds = SelectedActivities.Select(a => a.Id).ToList()
         };
     }
 

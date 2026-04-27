@@ -12,5 +12,9 @@ public class Activity
     
     public DateTime Date {get; set; }
     
+    public int MaxStudents { get; set; }
+    
     public DateTime CreatedAt { get; set; }
+
+    public ICollection<User> Students { get; set; } = new List<User>();
 }

@@ -16,7 +16,7 @@ public class ActivityRepository : IActivityRepository
 
     public async Task<IEnumerable<Activity>> GetAllAsync()
     {
-        return await _context.Activities.ToListAsync();
+        return await _context.Activities.Include(a => a.Students).ToListAsync();
     }
 
     public async Task AddAsync(Activity activity)

@@ -12,5 +12,7 @@ public class CreateActivityDto
     
     public DateTime Date {get; set; }
     
+    public int MaxStudents { get; set; }
+    
     public DateTime CreatedAt { get; set; }
 }
