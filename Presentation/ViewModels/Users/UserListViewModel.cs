@@ -11,24 +11,33 @@ namespace CONEX_APP.Presentation.ViewModels.Users;
 public class UserListViewModel : ViewModelBase
 {
     private readonly GetUsersUseCase _getUsersUseCase;
-
     private readonly CreateUserUseCase _createUserUseCase;
+    private readonly DeleteUserUseCase _deleteUserUseCase;
     private readonly GetActivityUseCase _getActivityUseCase;
 
     public ObservableCollection<UserDto> Users { get; set; }
 
-    public ICommand OpenAddUserWindowCommand { get; }
+    private UserDto? _selectedUser;
+    public UserDto? SelectedUser
+    {
+        get => _selectedUser;
+        set => SetProperty(ref _selectedUser, value);
+    }
 
+    public ICommand OpenAddUserWindowCommand { get; }
+    public ICommand DeleteUserCommand { get; }
     public ICommand GoBackCommand { get; }
 
-    public UserListViewModel(GetUsersUseCase getUsersUseCase, CreateUserUseCase createUserUseCase, GetActivityUseCase getActivityUseCase, Action goBack)
+    public UserListViewModel(GetUsersUseCase getUsersUseCase, CreateUserUseCase createUserUseCase, DeleteUserUseCase deleteUserUseCase, GetActivityUseCase getActivityUseCase, Action goBack)
     {
         _getUsersUseCase = getUsersUseCase;
         _createUserUseCase = createUserUseCase;
+        _deleteUserUseCase = deleteUserUseCase;
         _getActivityUseCase = getActivityUseCase;
         Users = new ObservableCollection<UserDto>();
         
         OpenAddUserWindowCommand = new RelayCommand(_ => OpenAddUserWindow());
+        DeleteUserCommand = new RelayCommand(async _ => await DeleteUserAsync(), _ => SelectedUser != null);
         GoBackCommand = new RelayCommand(_ => goBack());
 
         _ = LoadUsersAsync();
@@ -61,6 +70,24 @@ public class UserListViewModel : ViewModelBase
         catch (System.Exception ex)
         {
             System.Windows.MessageBox.Show($"Error cargando usuarios: {ex.Message}");
+        }
+    }
+
+    private async Task DeleteUserAsync()
+    {
+        if (SelectedUser != null)
+        {
+            var result = System.Windows.MessageBox.Show(
+                $"¿Seguro que quieres eliminar a {SelectedUser.Name} {SelectedUser.Surname}?", 
+                "Confirmar Eliminación", 
+                System.Windows.MessageBoxButton.YesNo, 
+                System.Windows.MessageBoxImage.Warning);
+            
+            if (result == System.Windows.MessageBoxResult.Yes)
+            {
+                await _deleteUserUseCase.ExecuteAsync(SelectedUser.Id);
+                await LoadUsersAsync();
+            }
         }
     }
 }

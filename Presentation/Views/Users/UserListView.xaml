@@ -13,11 +13,17 @@
             <TextBlock Text="Tabla de Usuarios" FontSize="24" FontWeight="Bold" VerticalAlignment="Center"/>
         </StackPanel>
         
-        <Button Grid.Row="1" Content="Añadir Nuevo Usuario" Command="{Binding OpenAddUserWindowCommand}" 
-                HorizontalAlignment="Left" Padding="10,5" Margin="0,0,0,10" 
-                Background="#007ACC" Foreground="White" FontWeight="Bold"/>
+        <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,10">
+            <Button Content="Añadir Nuevo Usuario" Command="{Binding OpenAddUserWindowCommand}" 
+                    Padding="10,5" Margin="0,0,10,0" 
+                    Background="#007ACC" Foreground="White" FontWeight="Bold"/>
+                    
+            <Button Content="Eliminar Usuario" Command="{Binding DeleteUserCommand}" 
+                    Padding="10,5" 
+                    Background="#CC0000" Foreground="White" FontWeight="Bold"/>
+        </StackPanel>
 
-        <DataGrid Grid.Row="2" ItemsSource="{Binding Users}" AutoGenerateColumns="False" IsReadOnly="True">
+        <DataGrid Grid.Row="2" ItemsSource="{Binding Users}" SelectedItem="{Binding SelectedUser, Mode=TwoWay}" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single">
             <DataGrid.Columns>
                 <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="50"/>
                 <DataGridTextColumn Header="Nombre" Binding="{Binding Name}" Width="100"/>

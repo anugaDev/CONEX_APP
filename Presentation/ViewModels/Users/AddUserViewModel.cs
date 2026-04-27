@@ -110,7 +110,6 @@ public class AddUserViewModel : ViewModelBase
             {
                 SelectedActivities.Add(value);
                 AvailableActivities.Remove(value);
-                // Reseteamos el combobox
                 SetProperty(ref _selectedActivityToAdd, null);
             }
         }

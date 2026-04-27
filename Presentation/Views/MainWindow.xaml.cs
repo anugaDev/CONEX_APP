@@ -17,8 +17,10 @@ public partial class MainWindow : Window
     private readonly UserRepository _userRepository;
     private readonly GetUsersUseCase _getUsersUseCase;
     private readonly CreateUserUseCase _createUserUseCase;
+    private readonly DeleteUserUseCase _deleteUserUseCase;
     private readonly GetActivityUseCase _getActivityUseCase;
     private readonly CreateActivityUseCase _createActivityUseCase;
+    private readonly DeleteActivityUseCase _deleteActivityUseCase;
 
     public MainWindow()
     {
@@ -41,10 +43,12 @@ public partial class MainWindow : Window
         _userRepository = new UserRepository(_dbContext);
         _getUsersUseCase = new GetUsersUseCase(_userRepository);
         _createUserUseCase = new CreateUserUseCase(_userRepository);
+        _deleteUserUseCase = new DeleteUserUseCase(_userRepository);
 
         var activityRepository = new ActivityRepository(_dbContext);
         _getActivityUseCase = new GetActivityUseCase(activityRepository);
         _createActivityUseCase = new CreateActivityUseCase(activityRepository);
+        _deleteActivityUseCase = new DeleteActivityUseCase(activityRepository);
 
         _mainViewModel = new MainViewModel();
         DataContext = _mainViewModel;
@@ -66,6 +70,7 @@ public partial class MainWindow : Window
         _mainViewModel.CurrentViewModel = new UserListViewModel(
             _getUsersUseCase, 
             _createUserUseCase, 
+            _deleteUserUseCase,
             _getActivityUseCase,
             goBack: NavigateToHome
         );
@@ -76,6 +81,7 @@ public partial class MainWindow : Window
         _mainViewModel.CurrentViewModel = new ActivityScheduleViewModel(
             _getActivityUseCase,
             _createActivityUseCase,
+            _deleteActivityUseCase,
             _getUsersUseCase,
             goBack: NavigateToHome
         );

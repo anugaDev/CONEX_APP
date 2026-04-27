@@ -6,4 +6,5 @@ public interface IActivityRepository
 {
     Task<IEnumerable<Activity>> GetAllAsync();
     Task AddAsync(Activity activity);
+    Task DeleteAsync(int id);
 }

@@ -12,28 +12,37 @@ namespace CONEX_APP.Presentation.ViewModels.Activities;
 public class ActivityScheduleViewModel : ViewModelBase
 {
     private readonly GetActivityUseCase _getActivitiesUseCase;
-
     private readonly CreateActivityUseCase _createActivityUseCase;
+    private readonly DeleteActivityUseCase _deleteActivityUseCase;
 
     private readonly GetUsersUseCase _getUsersUseCase;
 
     public ObservableCollection<ActivityScheduleDto> ActivitySchedule { get; set; }
 
-    public ICommand OpenAddUserWindowCommand { get; }
+    private ActivityScheduleDto? _selectedActivity;
+    public ActivityScheduleDto? SelectedActivity
+    {
+        get => _selectedActivity;
+        set => SetProperty(ref _selectedActivity, value);
+    }
 
+    public ICommand OpenAddUserWindowCommand { get; }
+    public ICommand DeleteActivityCommand { get; }
     public ICommand GoBackCommand { get; }
 
-    public ActivityScheduleViewModel(GetActivityUseCase getActivitiesUseCase, CreateActivityUseCase createActivityUseCase, GetUsersUseCase getUsersUseCase, Action goBack)
+    public ActivityScheduleViewModel(GetActivityUseCase getActivitiesUseCase, CreateActivityUseCase createActivityUseCase, DeleteActivityUseCase deleteActivityUseCase, GetUsersUseCase getUsersUseCase, Action goBack)
     {
         _getActivitiesUseCase = getActivitiesUseCase;
         _createActivityUseCase = createActivityUseCase;
+        _deleteActivityUseCase = deleteActivityUseCase;
         _getUsersUseCase = getUsersUseCase;
         ActivitySchedule = new ObservableCollection<ActivityScheduleDto>();
         
         OpenAddUserWindowCommand = new RelayCommand(_ => OpenAddUserWindow());
+        DeleteActivityCommand = new RelayCommand(async _ => await DeleteActivityAsync(), _ => SelectedActivity != null);
         GoBackCommand = new RelayCommand(_ => goBack());
 
-        _ = LoadUsersAsync();
+        _ = LoadActivitiesAsync();
     }
 
     private void OpenAddUserWindow()
@@ -45,11 +54,11 @@ public class ActivityScheduleViewModel : ViewModelBase
 
         if (addUserViewModel.WasSaved)
         {
-            _ = LoadUsersAsync();
+            _ = LoadActivitiesAsync();
         }
     }
 
-    public async Task LoadUsersAsync()
+    public async Task LoadActivitiesAsync()
     {
         try
         {
@@ -62,8 +71,25 @@ public class ActivityScheduleViewModel : ViewModelBase
         }
         catch (System.Exception ex)
         {
-            System.Windows.MessageBox.Show($"Error cargando usuarios: {ex.Message}");
+            System.Windows.MessageBox.Show($"Error cargando actividades: {ex.Message}");
         }
     }
 
+    private async Task DeleteActivityAsync()
+    {
+        if (SelectedActivity != null)
+        {
+            var result = System.Windows.MessageBox.Show(
+                $"¿Seguro que quieres eliminar la clase de {SelectedActivity.Name}?", 
+                "Confirmar Eliminación", 
+                System.Windows.MessageBoxButton.YesNo, 
+                System.Windows.MessageBoxImage.Warning);
+            
+            if (result == System.Windows.MessageBoxResult.Yes)
+            {
+                await _deleteActivityUseCase.ExecuteAsync(SelectedActivity.Id);
+                await LoadActivitiesAsync();
+            }
+        }
+    }
 }
