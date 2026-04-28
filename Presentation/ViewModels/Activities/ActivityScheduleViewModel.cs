@@ -33,8 +33,9 @@ public class ActivityScheduleViewModel : ViewModelBase
     public ICommand EditActivityCommand { get; }
     public ICommand DeleteActivityCommand { get; }
     public ICommand GoBackCommand { get; }
+    public ICommand GoToUsersCommand { get; }
 
-    public ActivityScheduleViewModel(GetActivityUseCase getActivitiesUseCase, CreateActivityUseCase createActivityUseCase, UpdateActivityUseCase updateActivityUseCase, DeleteActivityUseCase deleteActivityUseCase, GetUsersUseCase getUsersUseCase, Action goBack)
+    public ActivityScheduleViewModel(GetActivityUseCase getActivitiesUseCase, CreateActivityUseCase createActivityUseCase, UpdateActivityUseCase updateActivityUseCase, DeleteActivityUseCase deleteActivityUseCase, GetUsersUseCase getUsersUseCase, Action goBack, Action goToUsers)
     {
         _getActivitiesUseCase = getActivitiesUseCase;
         _createActivityUseCase = createActivityUseCase;
@@ -47,6 +48,7 @@ public class ActivityScheduleViewModel : ViewModelBase
         EditActivityCommand = new RelayCommand(_ => EditActivity(), _ => SelectedActivity != null);
         DeleteActivityCommand = new RelayCommand(async _ => await DeleteActivityAsync(), _ => SelectedActivity != null);
         GoBackCommand = new RelayCommand(_ => goBack());
+        GoToUsersCommand = new RelayCommand(_ => goToUsers());
 
         _ = LoadActivitiesAsync();
     }

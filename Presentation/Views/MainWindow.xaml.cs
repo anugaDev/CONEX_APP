@@ -77,7 +77,8 @@ public partial class MainWindow : Window
             _updateUserUseCase,
             _deleteUserUseCase,
             _getActivityUseCase,
-            goBack: NavigateToHome
+            goBack: NavigateToHome,
+            goToActivities: NavigateToClasses
         );
     }
 
@@ -89,7 +90,8 @@ public partial class MainWindow : Window
             _updateActivityUseCase,
             _deleteActivityUseCase,
             _getUsersUseCase,
-            goBack: NavigateToHome
+            goBack: NavigateToHome,
+            goToUsers: NavigateToUsers
         );
     }
 }

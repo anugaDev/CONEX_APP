@@ -8,10 +8,19 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
-        <StackPanel Grid.Row="0" Orientation="Horizontal" Margin="0,0,0,10">
-            <Button Content="Atrás" Command="{Binding GoBackCommand}" Width="80" Padding="5" Margin="0,0,20,0"/>
-            <TextBlock Text="Tabla de Clases y Actividades" FontSize="24" FontWeight="Bold" VerticalAlignment="Center"/>
-        </StackPanel>
+        <Grid Grid.Row="0" Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="Auto"/>
+                <ColumnDefinition Width="*"/>
+            </Grid.ColumnDefinitions>
+            <StackPanel Grid.Column="0" Orientation="Horizontal">
+                <Button Content="Atrás" Command="{Binding GoBackCommand}" Width="80" Padding="5" Margin="0,0,20,0"/>
+                <TextBlock Text="Tabla de Clases y Actividades" FontSize="24" FontWeight="Bold" VerticalAlignment="Center"/>
+            </StackPanel>
+            <Button Grid.Column="1" Content="Ir a Usuarios ➔" Command="{Binding GoToUsersCommand}" 
+                    HorizontalAlignment="Right" Padding="15,5" 
+                    Background="#28A745" Foreground="White" FontWeight="Bold"/>
+        </Grid>
         
         <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,10">
             <Button Content="Añadir Nueva Actividad" Command="{Binding OpenAddUserWindowCommand}" 

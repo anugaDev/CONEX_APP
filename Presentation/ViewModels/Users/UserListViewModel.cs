@@ -29,8 +29,9 @@ public class UserListViewModel : ViewModelBase
     public ICommand EditUserCommand { get; }
     public ICommand DeleteUserCommand { get; }
     public ICommand GoBackCommand { get; }
+    public ICommand GoToActivitiesCommand { get; }
 
-    public UserListViewModel(GetUsersUseCase getUsersUseCase, CreateUserUseCase createUserUseCase, UpdateUserUseCase updateUserUseCase, DeleteUserUseCase deleteUserUseCase, GetActivityUseCase getActivityUseCase, Action goBack)
+    public UserListViewModel(GetUsersUseCase getUsersUseCase, CreateUserUseCase createUserUseCase, UpdateUserUseCase updateUserUseCase, DeleteUserUseCase deleteUserUseCase, GetActivityUseCase getActivityUseCase, Action goBack, Action goToActivities)
     {
         _getUsersUseCase = getUsersUseCase;
         _createUserUseCase = createUserUseCase;
@@ -43,6 +44,7 @@ public class UserListViewModel : ViewModelBase
         EditUserCommand = new RelayCommand(_ => EditUser(), _ => SelectedUser != null);
         DeleteUserCommand = new RelayCommand(async _ => await DeleteUserAsync(), _ => SelectedUser != null);
         GoBackCommand = new RelayCommand(_ => goBack());
+        GoToActivitiesCommand = new RelayCommand(_ => goToActivities());
 
         _ = LoadUsersAsync();
     }
