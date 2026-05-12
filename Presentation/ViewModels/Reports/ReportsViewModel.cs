@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Input;
+using CONEX_APP.Application.DTOs;
 using CONEX_APP.MainApplication.DTOs;
 using CONEX_APP.MainApplication.UseCases.Activities;
 using CONEX_APP.MainApplication.UseCases.Users;

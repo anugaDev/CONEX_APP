@@ -3,7 +3,8 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
     <Grid Background="#F5F5F5">
         <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center" Width="300">
-            <TextBlock Text="CONEX APP" FontSize="36" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,40" Foreground="#333333"/>
+            <Image Source="/Presentation/Resources/Images/conex_logo.png" Height="120" HorizontalAlignment="Center" Margin="0,0,0,15" RenderOptions.BitmapScalingMode="HighQuality"/>
+            <TextBlock Text="Inicio" FontSize="36" FontWeight="Bold" HorizontalAlignment="Center" Margin="0,0,0,30" Foreground="#333333"/>
             
             <Button Content="Tabla de Usuarios" Command="{Binding GoToUsersCommand}" 
                     Height="50" Margin="0,0,0,15" FontSize="16" Background="#007ACC" Foreground="White" FontWeight="SemiBold"/>

@@ -29,6 +29,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Resource Include="Presentation\Resources\Images\conex_logo.png" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Page Update="Presentation\Views\Activities\AddUserWindow.xaml">
       <Generator>MSBuild:Compile</Generator>
       <XamlRuntime>Wpf</XamlRuntime>

@@ -14,7 +14,7 @@
         xmlns:viewmodels_reports="clr-namespace:CONEX_APP.Presentation.ViewModels.Reports"
         xmlns:views_reports="clr-namespace:CONEX_APP.Presentation.Views.Reports"
         mc:Ignorable="d"
-        Title="CONEX APP" Height="450" Width="800" WindowStartupLocation="CenterScreen">
+        Title="CONEX APP" Height="900" Width="1600" WindowStartupLocation="CenterScreen">
     
     <Window.Resources>
         <DataTemplate DataType="{x:Type viewmodels:HomeViewModel}">
