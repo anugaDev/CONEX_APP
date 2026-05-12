@@ -23,7 +23,7 @@ public class UserRepository : IUserRepository
     {
         if (activityIds != null && activityIds.Any())
         {
-            var activities = await _context.Activities.Where(a => activityIds.Contains(a.Id)).ToListAsync();
+            List<Activity> activities = await _context.Activities.Where(a => activityIds.Contains(a.Id)).ToListAsync();
             user.Activities = activities;
         }
 
@@ -35,7 +35,7 @@ public class UserRepository : IUserRepository
     {
         if (activityIds != null)
         {
-            var trackedUser = await _context.Users.Include(u => u.Activities).FirstOrDefaultAsync(u => u.Id == user.Id);
+            User? trackedUser = await _context.Users.Include(u => u.Activities).FirstOrDefaultAsync(u => u.Id == user.Id);
             if (trackedUser != null)
             {
                 trackedUser.Name = user.Name;
@@ -49,7 +49,7 @@ public class UserRepository : IUserRepository
                 trackedUser.IsPartner = user.IsPartner;
                 trackedUser.IsTutor = user.IsTutor;
 
-                var activities = await _context.Activities.Where(a => activityIds.Contains(a.Id)).ToListAsync();
+                List<Activity> activities = await _context.Activities.Where(a => activityIds.Contains(a.Id)).ToListAsync();
                 trackedUser.Activities = activities;
                 
                 await _context.SaveChangesAsync();
@@ -64,7 +64,7 @@ public class UserRepository : IUserRepository
 
     public async Task DeleteAsync(int id)
     {
-        var user = await _context.Users.FindAsync(id);
+        User? user = await _context.Users.FindAsync(id);
         if (user != null)
         {
             _context.Users.Remove(user);

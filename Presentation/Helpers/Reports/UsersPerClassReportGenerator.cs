@@ -36,7 +36,7 @@ public class UsersPerClassReportGenerator : PdfReportBase
     {
         container.Column(column =>
         {
-            foreach (var activity in classes)
+            foreach (ActivityScheduleDto activity in classes)
             {
                 column.Item().PaddingBottom(20).Column(classBlock =>
                 {
@@ -52,7 +52,7 @@ public class UsersPerClassReportGenerator : PdfReportBase
                     }
                     else
                     {
-                        var sortedStudents = activity.EnrolledStudentNames.OrderBy(s => s).ToList();
+                        List<string> sortedStudents = activity.EnrolledStudentNames.OrderBy(s => s).ToList();
                         
                         classBlock.Item().Table(table =>
                         {
@@ -72,7 +72,7 @@ public class UsersPerClassReportGenerator : PdfReportBase
                             });
 
                             int index = 1;
-                            foreach (var student in sortedStudents)
+                            foreach (string student in sortedStudents)
                             {
                                 table.Cell().Element(CellStyle).Text(index.ToString());
                                 table.Cell().Element(CellStyle).Text(student);

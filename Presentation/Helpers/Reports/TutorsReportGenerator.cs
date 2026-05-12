@@ -60,7 +60,7 @@ public class TutorsReportGenerator : PdfReportBase
                     c.DefaultTextStyle(x => x.SemiBold()).PaddingVertical(5).BorderBottom(1).BorderColor(Colors.Black);
             });
 
-            foreach (var user in users)
+            foreach (UserDto user in users)
             {
                 table.Cell().Element(CellStyle).Text(user.Id.ToString());
                 table.Cell().Element(CellStyle).Text(user.Name);

@@ -33,7 +33,7 @@ public class ActivityRepository : IActivityRepository
 
     public async Task DeleteAsync(int id)
     {
-        var activity = await _context.Activities.FindAsync(id);
+        Activity? activity = await _context.Activities.FindAsync(id);
         if (activity != null)
         {
             _context.Activities.Remove(activity);

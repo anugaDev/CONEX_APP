@@ -102,7 +102,7 @@ public class AddActivityViewModel : ViewModelBase
             _selectedDay = char.ToUpper(_selectedDay[0]) + _selectedDay.Substring(1); 
             _selectedTime = activityToEdit.Date.ToString("HH:mm");
 
-            foreach (var student in activityToEdit.EnrolledStudentNames)
+            foreach (string student in activityToEdit.EnrolledStudentNames)
             {
                 EnrolledStudents.Add(student);
             }
@@ -127,9 +127,9 @@ public class AddActivityViewModel : ViewModelBase
     {
         try
         {
-            var users = await _getUsersUseCase.ExecuteAsync();
+            IEnumerable<UserDto> users = await _getUsersUseCase.ExecuteAsync();
             Tutors.Clear();
-            foreach (var user in users.Where(u => u.IsTutor))
+            foreach (UserDto user in users.Where(u => u.IsTutor))
             {
                 Tutors.Add(user);
                 if (tutorToSelect != null && user.FullName == tutorToSelect)
@@ -155,7 +155,7 @@ public class AddActivityViewModel : ViewModelBase
     
     private async Task SaveAsync()
     {
-        var dateCalculator = new ActivityDateCalculator();
+        ActivityDateCalculator dateCalculator = new ActivityDateCalculator();
 
         if (_editingActivityId.HasValue)
         {

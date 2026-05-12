@@ -37,10 +37,10 @@ public class ReportsViewModel : ViewModelBase
     {
         try
         {
-            var users = await _getUsersUseCase.ExecuteAsync();
-            var partners = users.Where(u => u.IsPartner).OrderBy(u => u.Name).ToList();
+            IEnumerable<UserDto> users = await _getUsersUseCase.ExecuteAsync();
+            List<UserDto> partners = users.Where(u => u.IsPartner).OrderBy(u => u.Name).ToList();
             
-            var generator = new PartnersReportGenerator();
+            PartnersReportGenerator generator = new PartnersReportGenerator();
             string pdfPath = generator.GenerateReport(partners);
             OpenPdf(pdfPath);
         }
@@ -54,10 +54,10 @@ public class ReportsViewModel : ViewModelBase
     {
         try
         {
-            var users = await _getUsersUseCase.ExecuteAsync();
-            var tutors = users.Where(u => u.IsTutor).OrderBy(u => u.Name).ToList();
+            IEnumerable<UserDto> users = await _getUsersUseCase.ExecuteAsync();
+            List<UserDto> tutors = users.Where(u => u.IsTutor).OrderBy(u => u.Name).ToList();
             
-            var generator = new TutorsReportGenerator();
+            TutorsReportGenerator generator = new TutorsReportGenerator();
             string pdfPath = generator.GenerateReport(tutors);
             OpenPdf(pdfPath);
         }
@@ -71,10 +71,10 @@ public class ReportsViewModel : ViewModelBase
     {
         try
         {
-            var classes = await _getActivitiesUseCase.ExecuteAsync();
-            var sortedClasses = classes.OrderBy(c => c.Name).ToList();
+            IEnumerable<ActivityScheduleDto> classes = await _getActivitiesUseCase.ExecuteAsync();
+            List<ActivityScheduleDto> sortedClasses = classes.OrderBy(c => c.Name).ToList();
             
-            var generator = new TotalClassesReportGenerator();
+            TotalClassesReportGenerator generator = new TotalClassesReportGenerator();
             string pdfPath = generator.GenerateReport(sortedClasses);
             OpenPdf(pdfPath);
         }
@@ -88,10 +88,10 @@ public class ReportsViewModel : ViewModelBase
     {
         try
         {
-            var classes = await _getActivitiesUseCase.ExecuteAsync();
-            var sortedClasses = classes.OrderBy(c => c.Name).ToList();
+            IEnumerable<ActivityScheduleDto> classes = await _getActivitiesUseCase.ExecuteAsync();
+            List<ActivityScheduleDto> sortedClasses = classes.OrderBy(c => c.Name).ToList();
             
-            var generator = new UsersPerClassReportGenerator();
+            UsersPerClassReportGenerator generator = new UsersPerClassReportGenerator();
             string pdfPath = generator.GenerateReport(sortedClasses);
             OpenPdf(pdfPath);
         }
@@ -103,7 +103,7 @@ public class ReportsViewModel : ViewModelBase
 
     private void OpenPdf(string pdfPath)
     {
-        var psi = new System.Diagnostics.ProcessStartInfo
+        System.Diagnostics.ProcessStartInfo psi = new System.Diagnostics.ProcessStartInfo
         {
             FileName = pdfPath,
             UseShellExecute = true

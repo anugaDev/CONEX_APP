@@ -153,11 +153,11 @@ public class AddUserViewModel : ViewModelBase
     {
         try
         {
-            var activities = await _getActivityUseCase.ExecuteAsync();
+            IEnumerable<ActivityScheduleDto> activities = await _getActivityUseCase.ExecuteAsync();
             AvailableActivities.Clear();
             SelectedActivities.Clear();
 
-            foreach (var act in activities)
+            foreach (ActivityScheduleDto act in activities)
             {
                 if (enrolledActivityIds != null && enrolledActivityIds.Contains(act.Id))
                 {
@@ -184,7 +184,7 @@ public class AddUserViewModel : ViewModelBase
     {
         if (_editingUserId.HasValue)
         {
-            var dto = new UpdateUserDto
+            UpdateUserDto dto = new UpdateUserDto
             {
                 Id = _editingUserId.Value,
                 Name = Name, 

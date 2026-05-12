@@ -28,10 +28,10 @@ public partial class App : System.Windows.Application
         if (AppDbContext.Mode != DatabaseMode.Production)
             return;
 
-        var sqlFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "tools", "import_data.sql");
+        string sqlFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "tools", "import_data.sql");
         sqlFile = Path.GetFullPath(sqlFile);
 
-        var flagFile = sqlFile + ".imported";
+        string flagFile = sqlFile + ".imported";
 
         // Skip if already imported or SQL file doesn't exist
         if (File.Exists(flagFile) || !File.Exists(sqlFile))
@@ -39,8 +39,8 @@ public partial class App : System.Windows.Application
 
         try
         {
-            using var dbContext = new AppDbContext();
-            var sql = File.ReadAllText(sqlFile);
+            using AppDbContext dbContext = new AppDbContext();
+            string sql = File.ReadAllText(sqlFile);
             dbContext.Database.ExecuteSqlRaw(sql);
 
             // Create flag file so we don't re-import

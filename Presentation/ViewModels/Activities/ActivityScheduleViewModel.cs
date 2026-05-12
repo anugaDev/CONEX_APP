@@ -101,7 +101,7 @@ public class ActivityScheduleViewModel : ViewModelBase
         {
             IEnumerable<ActivityScheduleDto> usersFromDb = await _getActivitiesUseCase.ExecuteAsync();
             ActivitySchedule.Clear();
-            foreach (var activity in usersFromDb)
+            foreach (ActivityScheduleDto activity in usersFromDb)
             {
                 ActivitySchedule.Add(activity);
             }

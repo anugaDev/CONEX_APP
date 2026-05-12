@@ -49,7 +49,7 @@ public partial class MainWindow : Window
         _updateUserUseCase = new UpdateUserUseCase(_userRepository);
         _deleteUserUseCase = new DeleteUserUseCase(_userRepository);
 
-        var activityRepository = new ActivityRepository(_dbContext);
+        ActivityRepository activityRepository = new ActivityRepository(_dbContext);
         _getActivityUseCase = new GetActivityUseCase(activityRepository);
         _createActivityUseCase = new CreateActivityUseCase(activityRepository);
         _updateActivityUseCase = new UpdateActivityUseCase(activityRepository);

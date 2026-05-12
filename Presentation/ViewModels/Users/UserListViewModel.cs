@@ -51,8 +51,8 @@ public class UserListViewModel : ViewModelBase
 
     private void OpenAddUserWindow()
     {
-        var addUserViewModel = new AddUserViewModel(_createUserUseCase, _updateUserUseCase, _getActivityUseCase);
-        var addUserWindow = new AddUserWindow(addUserViewModel);
+        AddUserViewModel addUserViewModel = new AddUserViewModel(_createUserUseCase, _updateUserUseCase, _getActivityUseCase);
+        AddUserWindow addUserWindow = new AddUserWindow(addUserViewModel);
         
         addUserWindow.ShowDialog();
 
@@ -66,8 +66,8 @@ public class UserListViewModel : ViewModelBase
     {
         if (SelectedUser != null)
         {
-            var addUserViewModel = new AddUserViewModel(_createUserUseCase, _updateUserUseCase, _getActivityUseCase, SelectedUser);
-            var addUserWindow = new AddUserWindow(addUserViewModel);
+            AddUserViewModel addUserViewModel = new AddUserViewModel(_createUserUseCase, _updateUserUseCase, _getActivityUseCase, SelectedUser);
+            AddUserWindow addUserWindow = new AddUserWindow(addUserViewModel);
             
             addUserWindow.ShowDialog();
 
@@ -82,9 +82,9 @@ public class UserListViewModel : ViewModelBase
     {
         try
         {
-            var usersFromDb = await _getUsersUseCase.ExecuteAsync();
+            IEnumerable<UserDto> usersFromDb = await _getUsersUseCase.ExecuteAsync();
             Users.Clear();
-            foreach (var user in usersFromDb)
+            foreach (UserDto user in usersFromDb)
             {
                 Users.Add(user);
             }
@@ -99,7 +99,7 @@ public class UserListViewModel : ViewModelBase
     {
         if (SelectedUser != null)
         {
-            var result = System.Windows.MessageBox.Show(
+            System.Windows.MessageBoxResult result = System.Windows.MessageBox.Show(
                 $"¿Seguro que quieres eliminar a {SelectedUser.Name} {SelectedUser.Surname}?", 
                 "Confirmar Eliminación", 
                 System.Windows.MessageBoxButton.YesNo, 

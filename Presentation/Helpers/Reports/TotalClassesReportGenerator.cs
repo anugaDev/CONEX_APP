@@ -58,7 +58,7 @@ public class TotalClassesReportGenerator : PdfReportBase
                     c.DefaultTextStyle(x => x.SemiBold()).PaddingVertical(5).BorderBottom(1).BorderColor(Colors.Black);
             });
 
-            foreach (var activity in classes)
+            foreach (ActivityScheduleDto activity in classes)
             {
                 table.Cell().Element(CellStyle).Text(activity.Id.ToString());
                 table.Cell().Element(CellStyle).Text(activity.Name);
