@@ -4,6 +4,7 @@ using CONEX_APP.Infrastructure.Repositories;
 using CONEX_APP.MainApplication.UseCases.Users;
 using CONEX_APP.Presentation.ViewModels;
 using CONEX_APP.Presentation.ViewModels.Classes;
+using CONEX_APP.Presentation.ViewModels.Reports;
 using CONEX_APP.Presentation.ViewModels.Users;
 using CONEX_APP.Presentation.ViewModels.Activities;
 using CONEX_APP.MainApplication.UseCases.Activities;
@@ -65,7 +66,17 @@ public partial class MainWindow : Window
         _mainViewModel.CurrentViewModel = new HomeViewModel(
             navigateToUsers: NavigateToUsers,
             navigateToClasses: NavigateToClasses,
+            navigateToReports: NavigateToReports,
             exitAction: () => this.Close()
+        );
+    }
+
+    private void NavigateToReports()
+    {
+        _mainViewModel.CurrentViewModel = new ReportsViewModel(
+            _getUsersUseCase,
+            _getActivityUseCase,
+            goBack: NavigateToHome
         );
     }
 

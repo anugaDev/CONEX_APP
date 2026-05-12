@@ -10,6 +10,9 @@
                     
             <Button Content="Tabla de Clases" Command="{Binding GoToClassesCommand}" 
                     Height="50" Margin="0,0,0,15" FontSize="16" Background="#007ACC" Foreground="White" FontWeight="SemiBold"/>
+
+            <Button Content="Sección de Listados" Command="{Binding GoToReportsCommand}" 
+                    Height="50" Margin="0,0,0,15" FontSize="16" Background="#FF8C00" Foreground="White" FontWeight="SemiBold"/>
                     
             <Button Content="Salir" Command="{Binding ExitCommand}" 
                     Height="50" FontSize="16" Background="#D32F2F" Foreground="White" FontWeight="SemiBold"/>

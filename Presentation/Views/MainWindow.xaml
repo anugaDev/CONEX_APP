@@ -11,6 +11,8 @@
         xmlns:views_classes="clr-namespace:CONEX_APP.Presentation.Views.Classes"
         xmlns:viewmodels_activities="clr-namespace:CONEX_APP.Presentation.ViewModels.Activities"
         xmlns:views_activities="clr-namespace:CONEX_APP.Presentation.Views.Activities"
+        xmlns:viewmodels_reports="clr-namespace:CONEX_APP.Presentation.ViewModels.Reports"
+        xmlns:views_reports="clr-namespace:CONEX_APP.Presentation.Views.Reports"
         mc:Ignorable="d"
         Title="CONEX APP" Height="450" Width="800" WindowStartupLocation="CenterScreen">
     
@@ -26,6 +28,9 @@
         </DataTemplate>
         <DataTemplate DataType="{x:Type viewmodels_activities:ActivityScheduleViewModel}">
             <views_activities:ActivityScheduleView />
+        </DataTemplate>
+        <DataTemplate DataType="{x:Type viewmodels_reports:ReportsViewModel}">
+            <views_reports:ReportsView />
         </DataTemplate>
     </Window.Resources>
 
