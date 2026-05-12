@@ -1,4 +1,6 @@
 using System.Collections.ObjectModel;
+using System.Diagnostics;
+using System.Windows;
 using System.Windows.Input;
 using CONEX_APP.Application.DTOs;
 using CONEX_APP.MainApplication.UseCases.Activities;
@@ -30,9 +32,15 @@ public class ActivityScheduleViewModel : ViewModelBase
     }
 
     public ICommand OpenAddUserWindowCommand { get; }
+
     public ICommand EditActivityCommand { get; }
+
     public ICommand DeleteActivityCommand { get; }
+
+    public ICommand PrintAttendanceCommand { get; }
+
     public ICommand GoBackCommand { get; }
+
     public ICommand GoToUsersCommand { get; }
 
     public ActivityScheduleViewModel(GetActivityUseCase getActivitiesUseCase, CreateActivityUseCase createActivityUseCase, UpdateActivityUseCase updateActivityUseCase, DeleteActivityUseCase deleteActivityUseCase, GetUsersUseCase getUsersUseCase, Action goBack, Action goToUsers)
@@ -47,6 +55,7 @@ public class ActivityScheduleViewModel : ViewModelBase
         OpenAddUserWindowCommand = new RelayCommand(_ => OpenAddActivityWindow());
         EditActivityCommand = new RelayCommand(_ => EditActivity(), _ => SelectedActivity != null);
         DeleteActivityCommand = new RelayCommand(async _ => await DeleteActivityAsync(), _ => SelectedActivity != null);
+        PrintAttendanceCommand = new RelayCommand(_ => PrintAttendance(), _ => SelectedActivity != null);
         GoBackCommand = new RelayCommand(_ => goBack());
         GoToUsersCommand = new RelayCommand(_ => goToUsers());
 
@@ -55,30 +64,34 @@ public class ActivityScheduleViewModel : ViewModelBase
 
     private void OpenAddActivityWindow()
     {
-        var addUserViewModel = new AddActivityViewModel(_createActivityUseCase, _updateActivityUseCase, _getUsersUseCase);
-        var addUserWindow = new AddActivityWindow(addUserViewModel);
+        AddActivityViewModel addUserViewModel = new AddActivityViewModel(_createActivityUseCase, _updateActivityUseCase, _getUsersUseCase);
+        AddActivityWindow addUserWindow = new AddActivityWindow(addUserViewModel);
         
         addUserWindow.ShowDialog();
 
-        if (addUserViewModel.WasSaved)
+        if (!addUserViewModel.WasSaved)
         {
-            _ = LoadActivitiesAsync();
+            return;
         }
+
+        _ = LoadActivitiesAsync();
     }
 
     private void EditActivity()
     {
         if (SelectedActivity != null)
         {
-            var addActivityViewModel = new AddActivityViewModel(_createActivityUseCase, _updateActivityUseCase, _getUsersUseCase, SelectedActivity);
-            var addActivityWindow = new AddActivityWindow(addActivityViewModel);
+            AddActivityViewModel addActivityViewModel = new AddActivityViewModel(_createActivityUseCase, _updateActivityUseCase, _getUsersUseCase, SelectedActivity);
+            AddActivityWindow addActivityWindow = new AddActivityWindow(addActivityViewModel);
             
             addActivityWindow.ShowDialog();
 
-            if (addActivityViewModel.WasSaved)
+            if (!addActivityViewModel.WasSaved)
             {
-                _ = LoadActivitiesAsync();
+                return;
             }
+
+            _ = LoadActivitiesAsync();
         }
     }
 
@@ -86,7 +99,7 @@ public class ActivityScheduleViewModel : ViewModelBase
     {
         try
         {
-            var usersFromDb = await _getActivitiesUseCase.ExecuteAsync();
+            IEnumerable<ActivityScheduleDto> usersFromDb = await _getActivitiesUseCase.ExecuteAsync();
             ActivitySchedule.Clear();
             foreach (var activity in usersFromDb)
             {
@@ -95,7 +108,7 @@ public class ActivityScheduleViewModel : ViewModelBase
         }
         catch (System.Exception ex)
         {
-            System.Windows.MessageBox.Show($"Error cargando actividades: {ex.Message}");
+            MessageBox.Show($"Error cargando actividades: {ex.Message}");
         }
     }
 
@@ -103,16 +116,38 @@ public class ActivityScheduleViewModel : ViewModelBase
     {
         if (SelectedActivity != null)
         {
-            var result = System.Windows.MessageBox.Show(
+            MessageBoxResult result = MessageBox.Show(
                 $"¿Seguro que quieres eliminar la clase de {SelectedActivity.Name}?", 
                 "Confirmar Eliminación", 
-                System.Windows.MessageBoxButton.YesNo, 
-                System.Windows.MessageBoxImage.Warning);
+                MessageBoxButton.YesNo, 
+                MessageBoxImage.Warning);
             
-            if (result == System.Windows.MessageBoxResult.Yes)
+            if (result == MessageBoxResult.Yes)
             {
                 await _deleteActivityUseCase.ExecuteAsync(SelectedActivity.Id);
                 await LoadActivitiesAsync();
+            }
+        }
+    }
+
+    private void PrintAttendance()
+    {
+        if (SelectedActivity != null)
+        {
+            try
+            {
+                string pdfPath = Helpers.PdfAttendanceDocumentGenerator.GeneratePdf(SelectedActivity);
+                
+                ProcessStartInfo psi = new ProcessStartInfo
+                {
+                    FileName = pdfPath,
+                    UseShellExecute = true
+                };
+                Process.Start(psi);
+            }
+            catch (System.Exception ex)
+            {
+                MessageBox.Show($"Error al generar el PDF: {ex.Message}", "Error", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Error);
             }
         }
     }

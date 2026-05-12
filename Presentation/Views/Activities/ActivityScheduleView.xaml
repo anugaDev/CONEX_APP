@@ -28,8 +28,12 @@
                     Background="#007ACC" Foreground="White" FontWeight="Bold"/>
                     
             <Button Content="Eliminar Clase" Command="{Binding DeleteActivityCommand}" 
-                    Padding="10,5" 
+                    Padding="10,5" Margin="0,0,10,0"
                     Background="#CC0000" Foreground="White" FontWeight="Bold"/>
+                    
+            <Button Content="🖨️ Imprimir Hoja Asistencia" Command="{Binding PrintAttendanceCommand}" 
+                    Padding="10,5" 
+                    Background="#6C757D" Foreground="White" FontWeight="Bold"/>
         </StackPanel>
 
         <DataGrid Grid.Row="2" ItemsSource="{Binding ActivitySchedule}" SelectedItem="{Binding SelectedActivity, Mode=TwoWay}" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single">
