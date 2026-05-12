@@ -33,7 +33,6 @@ public class UserRepository : IUserRepository
 
     public async Task UpdateAsync(User user, IEnumerable<int>? activityIds = null)
     {
-        // Limpiamos las actividades actuales y metemos las nuevas si hay
         if (activityIds != null)
         {
             var trackedUser = await _context.Users.Include(u => u.Activities).FirstOrDefaultAsync(u => u.Id == user.Id);
