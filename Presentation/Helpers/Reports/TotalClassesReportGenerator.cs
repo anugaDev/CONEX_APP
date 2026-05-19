@@ -8,28 +8,11 @@ namespace CONEX_APP.Presentation.Helpers.Reports;
 
 public class TotalClassesReportGenerator : PdfReportBase
 {
-    public string GenerateReport(List<ActivityScheduleDto> classes)
-    {
-        string filePath = GetFilePath("Listado_Clases");
+    protected override string ReportTitle => "Listado Total de Clases";
+    protected override string FilePrefix => "Listado_Clases";
 
-        Document document = Document.Create(container =>
-        {
-            container.Page(page =>
-            {
-                page.Size(PageSizes.A4.Landscape());
-                page.Margin(1, Unit.Centimetre);
-                page.PageColor(Colors.White);
-                page.DefaultTextStyle(x => x.FontSize(10).FontFamily(Fonts.Arial));
-
-                page.Header().Element(c => ComposeHeader(c, "Listado Total de Clases"));
-                page.Content().Element(c => ComposeClassesTable(c, classes));
-                ComposeFooter(page);
-            });
-        });
-
-        document.GeneratePdf(filePath);
-        return filePath;
-    }
+    public string GenerateReport(List<ActivityScheduleDto> classes) =>
+        BuildAndSave(container => ComposeClassesTable(container, classes));
 
     private void ComposeClassesTable(IContainer container, List<ActivityScheduleDto> classes)
     {
@@ -47,29 +30,23 @@ public class TotalClassesReportGenerator : PdfReportBase
 
             table.Header(header =>
             {
-                header.Cell().Element(HeaderStyle).Text("ID");
-                header.Cell().Element(HeaderStyle).Text("Nombre de Actividad");
-                header.Cell().Element(HeaderStyle).Text("Enseñante");
-                header.Cell().Element(HeaderStyle).Text("Aula");
-                header.Cell().Element(HeaderStyle).Text("Horario");
-                header.Cell().Element(HeaderStyle).Text("Alumnos");
-
-                static IContainer HeaderStyle(IContainer c) =>
-                    c.DefaultTextStyle(x => x.SemiBold()).PaddingVertical(5).BorderBottom(1).BorderColor(Colors.Black);
+                header.Cell().Element(HeaderCell).Text("ID");
+                header.Cell().Element(HeaderCell).Text("Nombre de Actividad");
+                header.Cell().Element(HeaderCell).Text("Enseñante");
+                header.Cell().Element(HeaderCell).Text("Aula");
+                header.Cell().Element(HeaderCell).Text("Horario");
+                header.Cell().Element(HeaderCell).Text("Alumnos");
             });
 
             foreach (ActivityScheduleDto activity in classes)
             {
-                table.Cell().Element(CellStyle).Text(activity.Id.ToString());
-                table.Cell().Element(CellStyle).Text(activity.Name);
-                table.Cell().Element(CellStyle).Text(activity.Tutor);
-                table.Cell().Element(CellStyle).Text(activity.Classroom);
-                table.Cell().Element(CellStyle).Text(activity.Date.ToString("dddd HH:mm"));
-                table.Cell().Element(CellStyle).Text(activity.Occupancy);
+                table.Cell().Element(DataCell).Text(activity.Id.ToString());
+                table.Cell().Element(DataCell).Text(activity.Name);
+                table.Cell().Element(DataCell).Text(activity.Tutor);
+                table.Cell().Element(DataCell).Text(activity.Classroom);
+                table.Cell().Element(DataCell).Text(activity.Date.ToString("dddd HH:mm"));
+                table.Cell().Element(DataCell).Text(activity.Occupancy);
             }
-
-            static IContainer CellStyle(IContainer c) =>
-                c.BorderBottom(1).BorderColor(Colors.Grey.Lighten2).PaddingVertical(5).PaddingHorizontal(2);
         });
     }
 }

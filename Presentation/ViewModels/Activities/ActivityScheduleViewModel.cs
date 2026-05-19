@@ -6,6 +6,7 @@ using CONEX_APP.Application.DTOs;
 using CONEX_APP.MainApplication.UseCases.Activities;
 using CONEX_APP.MainApplication.UseCases.Users;
 using CONEX_APP.Presentation.Commands;
+using CONEX_APP.Presentation.Helpers;
 using AddActivityWindow = CONEX_APP.Presentation.Views.Activities.AddActivityWindow;
 
 namespace CONEX_APP.Presentation.ViewModels.Activities;
@@ -136,7 +137,10 @@ public class ActivityScheduleViewModel : ViewModelBase
         {
             try
             {
-                string pdfPath = Helpers.PdfAttendanceDocumentGenerator.GeneratePdf(SelectedActivity);
+                ActivityDateCalculator dateCalculator = new ActivityDateCalculator();
+                PdfAttendanceDocumentGenerator documentGenerator = new PdfAttendanceDocumentGenerator(dateCalculator);
+                PdfAttendanceDocumentGenerator generator = documentGenerator;
+                string pdfPath = generator.GeneratePdf(SelectedActivity);
                 
                 ProcessStartInfo psi = new ProcessStartInfo
                 {

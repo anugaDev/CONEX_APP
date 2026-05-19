@@ -29,4 +29,14 @@ public class ActivityDateCalculator
         
         return date.Add(time);
     }
+
+    public DateTime GetNextOccurrenceFromDate(DateTime referenceDate)
+    {
+        DateTime next = DateTime.Today;
+        while (next.DayOfWeek != referenceDate.DayOfWeek)
+        {
+            next = next.AddDays(1);
+        }
+        return next.Add(referenceDate.TimeOfDay);
+    }
 }

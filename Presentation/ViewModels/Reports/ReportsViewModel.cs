@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using System.Windows.Input;
 using CONEX_APP.Application.DTOs;
 using CONEX_APP.MainApplication.DTOs;
@@ -26,7 +27,7 @@ public class ReportsViewModel : ViewModelBase
     {
         _getUsersUseCase = getUsersUseCase;
         _getActivitiesUseCase = getActivitiesUseCase;
-        
+
         GoBackCommand = new RelayCommand(_ => goBack());
         PrintPartnersCommand = new RelayCommand(async _ => await PrintPartnersAsync());
         PrintTutorsCommand = new RelayCommand(async _ => await PrintTutorsAsync());
@@ -34,14 +35,14 @@ public class ReportsViewModel : ViewModelBase
         PrintUsersPerClassCommand = new RelayCommand(async _ => await PrintUsersPerClassAsync());
     }
 
-    private async System.Threading.Tasks.Task PrintPartnersAsync()
+    private async Task PrintPartnersAsync()
     {
         try
         {
             IEnumerable<UserDto> users = await _getUsersUseCase.ExecuteAsync();
             List<UserDto> partners = users.Where(u => u.IsPartner).OrderBy(u => u.Name).ToList();
-            
-            PartnersReportGenerator generator = new PartnersReportGenerator();
+
+            UserListReportGenerator generator = new UserListReportGenerator("Listado de Socios", "Listado_Socios");
             string pdfPath = generator.GenerateReport(partners);
             OpenPdf(pdfPath);
         }
@@ -51,14 +52,14 @@ public class ReportsViewModel : ViewModelBase
         }
     }
 
-    private async System.Threading.Tasks.Task PrintTutorsAsync()
+    private async Task PrintTutorsAsync()
     {
         try
         {
             IEnumerable<UserDto> users = await _getUsersUseCase.ExecuteAsync();
             List<UserDto> tutors = users.Where(u => u.IsTutor).OrderBy(u => u.Name).ToList();
-            
-            TutorsReportGenerator generator = new TutorsReportGenerator();
+
+            UserListReportGenerator generator = new UserListReportGenerator("Listado de Enseñantes", "Listado_Enseñantes");
             string pdfPath = generator.GenerateReport(tutors);
             OpenPdf(pdfPath);
         }
@@ -68,13 +69,13 @@ public class ReportsViewModel : ViewModelBase
         }
     }
 
-    private async System.Threading.Tasks.Task PrintTotalClassesAsync()
+    private async Task PrintTotalClassesAsync()
     {
         try
         {
             IEnumerable<ActivityScheduleDto> classes = await _getActivitiesUseCase.ExecuteAsync();
             List<ActivityScheduleDto> sortedClasses = classes.OrderBy(c => c.Name).ToList();
-            
+
             TotalClassesReportGenerator generator = new TotalClassesReportGenerator();
             string pdfPath = generator.GenerateReport(sortedClasses);
             OpenPdf(pdfPath);
@@ -85,13 +86,13 @@ public class ReportsViewModel : ViewModelBase
         }
     }
 
-    private async System.Threading.Tasks.Task PrintUsersPerClassAsync()
+    private async Task PrintUsersPerClassAsync()
     {
         try
         {
             IEnumerable<ActivityScheduleDto> classes = await _getActivitiesUseCase.ExecuteAsync();
             List<ActivityScheduleDto> sortedClasses = classes.OrderBy(c => c.Name).ToList();
-            
+
             UsersPerClassReportGenerator generator = new UsersPerClassReportGenerator();
             string pdfPath = generator.GenerateReport(sortedClasses);
             OpenPdf(pdfPath);
