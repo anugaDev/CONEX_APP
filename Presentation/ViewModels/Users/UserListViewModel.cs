@@ -3,17 +3,21 @@ using System.Windows.Input;
 using CONEX_APP.MainApplication.DTOs;
 using CONEX_APP.MainApplication.UseCases.Users;
 using CONEX_APP.Presentation.Commands;
+using CONEX_APP.Presentation.Helpers.Reports;
 using CONEX_APP.Presentation.Views.Users;
-using AddActivityWindow = CONEX_APP.Presentation.Views.Activities.AddActivityWindow;
 
 namespace CONEX_APP.Presentation.ViewModels.Users;
 
 public class UserListViewModel : ViewModelBase
 {
     private readonly GetUsersUseCase _getUsersUseCase;
+
     private readonly CreateUserUseCase _createUserUseCase;
+
     private readonly UpdateUserUseCase _updateUserUseCase;
+
     private readonly DeleteUserUseCase _deleteUserUseCase;
+
     private readonly GetActivityUseCase _getActivityUseCase;
 
     public ObservableCollection<UserDto> Users { get; set; }
@@ -30,6 +34,7 @@ public class UserListViewModel : ViewModelBase
     public ICommand DeleteUserCommand { get; }
     public ICommand GoBackCommand { get; }
     public ICommand GoToActivitiesCommand { get; }
+    public ICommand PrintBadgeCommand { get; }
 
     public UserListViewModel(GetUsersUseCase getUsersUseCase, CreateUserUseCase createUserUseCase, UpdateUserUseCase updateUserUseCase, DeleteUserUseCase deleteUserUseCase, GetActivityUseCase getActivityUseCase, Action goBack, Action goToActivities)
     {
@@ -45,6 +50,7 @@ public class UserListViewModel : ViewModelBase
         DeleteUserCommand = new RelayCommand(async _ => await DeleteUserAsync(), _ => SelectedUser != null);
         GoBackCommand = new RelayCommand(_ => goBack());
         GoToActivitiesCommand = new RelayCommand(_ => goToActivities());
+        PrintBadgeCommand = new RelayCommand(_ => PrintBadge(), _ => SelectedUser != null);
 
         _ = LoadUsersAsync();
     }
@@ -89,7 +95,7 @@ public class UserListViewModel : ViewModelBase
                 Users.Add(user);
             }
         }
-        catch (System.Exception ex)
+        catch (Exception ex)
         {
             System.Windows.MessageBox.Show($"Error cargando usuarios: {ex.Message}");
         }
@@ -110,6 +116,28 @@ public class UserListViewModel : ViewModelBase
                 await _deleteUserUseCase.ExecuteAsync(SelectedUser.Id);
                 await LoadUsersAsync();
             }
+        }
+    }
+
+    private void PrintBadge()
+    {
+        if (SelectedUser == null) return;
+
+        try
+        {
+            UserBadgeGenerator generator = new UserBadgeGenerator();
+            string pdfPath = generator.GenerateBadge(SelectedUser);
+
+            System.Diagnostics.ProcessStartInfo psi = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = pdfPath,
+                UseShellExecute = true
+            };
+            System.Diagnostics.Process.Start(psi);
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show($"Error al generar el carnet: {ex.Message}");
         }
     }
 }

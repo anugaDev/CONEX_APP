@@ -28,8 +28,12 @@
                     Background="#007ACC" Foreground="White" FontWeight="Bold"/>
                     
             <Button Content="Eliminar Usuario" Command="{Binding DeleteUserCommand}" 
-                    Padding="10,5" 
+                    Padding="10,5" Margin="0,0,10,0"
                     Background="#CC0000" Foreground="White" FontWeight="Bold"/>
+                    
+            <Button Content="🪪 Imprimir Carnet" Command="{Binding PrintBadgeCommand}" 
+                    Padding="10,5" 
+                    Background="#FF8C00" Foreground="White" FontWeight="Bold"/>
         </StackPanel>
 
         <DataGrid Grid.Row="2" ItemsSource="{Binding Users}" SelectedItem="{Binding SelectedUser, Mode=TwoWay}" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single">
