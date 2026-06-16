@@ -35,6 +35,8 @@ public class UserListViewModel : ViewModelBase
     public ICommand GoBackCommand { get; }
     public ICommand GoToActivitiesCommand { get; }
     public ICommand PrintBadgeCommand { get; }
+    public ICommand PrintRegistrationFormCommand { get; }
+    public ICommand PrintRenewalReceiptCommand { get; }
 
     public UserListViewModel(GetUsersUseCase getUsersUseCase, CreateUserUseCase createUserUseCase, UpdateUserUseCase updateUserUseCase, DeleteUserUseCase deleteUserUseCase, GetActivityUseCase getActivityUseCase, Action goBack, Action goToActivities)
     {
@@ -51,6 +53,8 @@ public class UserListViewModel : ViewModelBase
         GoBackCommand = new RelayCommand(_ => goBack());
         GoToActivitiesCommand = new RelayCommand(_ => goToActivities());
         PrintBadgeCommand = new RelayCommand(_ => PrintBadge(), _ => SelectedUser != null);
+        PrintRegistrationFormCommand = new RelayCommand(_ => PrintRegistrationForm(), _ => SelectedUser != null);
+        PrintRenewalReceiptCommand = new RelayCommand(_ => PrintRenewalReceipt(), _ => SelectedUser != null);
 
         _ = LoadUsersAsync();
     }
@@ -138,6 +142,50 @@ public class UserListViewModel : ViewModelBase
         catch (Exception ex)
         {
             System.Windows.MessageBox.Show($"Error al generar el carnet: {ex.Message}");
+        }
+    }
+
+    private void PrintRegistrationForm()
+    {
+        if (SelectedUser == null) return;
+
+        try
+        {
+            UserRegistrationFormGenerator generator = new UserRegistrationFormGenerator();
+            string pdfPath = generator.GenerateRegistrationForm(SelectedUser);
+
+            System.Diagnostics.ProcessStartInfo psi = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = pdfPath,
+                UseShellExecute = true
+            };
+            System.Diagnostics.Process.Start(psi);
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show($"Error al generar la hoja de inscripción: {ex.Message}");
+        }
+    }
+
+    private void PrintRenewalReceipt()
+    {
+        if (SelectedUser == null) return;
+
+        try
+        {
+            UserRenewalReceiptGenerator generator = new UserRenewalReceiptGenerator();
+            string pdfPath = generator.GenerateReceipt(SelectedUser);
+
+            System.Diagnostics.ProcessStartInfo psi = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = pdfPath,
+                UseShellExecute = true
+            };
+            System.Diagnostics.Process.Start(psi);
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show($"Error al generar el recibo de renovación: {ex.Message}");
         }
     }
 }

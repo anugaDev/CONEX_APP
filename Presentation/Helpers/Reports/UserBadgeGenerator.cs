@@ -1,4 +1,3 @@
-using System.IO;
 using CONEX_APP.MainApplication.DTOs;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
@@ -6,62 +5,73 @@ using QuestPDF.Infrastructure;
 
 namespace CONEX_APP.Presentation.Helpers.Reports;
 
-public class UserBadgeGenerator
+public class UserBadgeGenerator : UserDocumentBase
 {
-    public UserBadgeGenerator()
-    {
-        QuestPDF.Settings.License = LicenseType.Community;
-    }
+    private const string FilePrefix = "Carnet_Usuario";
+    private const float BadgeWidthMm = 85.6f;
+    private const float BadgeHeightMm = 53.98f;
+    private const float BadgeMarginMm = 4f;
+    private const float LogoMaxWidthMm = 25f;
+    private const float DividerPaddingV = 1.5f;
+    private const int NameFontSize = 8;
+    private const int NumberFontSize = 7;
 
     public string GenerateBadge(UserDto user)
     {
-        string fileName = $"Carnet_Usuario_{user.Id}_{DateTime.Now:dd-MM-yyyy_HH-mm-ss}.pdf";
-        string filePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), fileName);
-
+        string filePath = BuildFilePath(FilePrefix, user.Id);
         byte[] logoBytes = LoadLogoBytes();
 
-        Document document = Document.Create(container =>
+        Document.Create(container => container.Page(page =>
         {
-            container.Page(page =>
-            {
-                page.Size(85.6f, 53.98f, Unit.Millimetre);
-                page.Margin(4, Unit.Millimetre);
-                page.PageColor(Colors.White);
-                page.DefaultTextStyle(x => x.FontFamily(Fonts.Arial));
+            ConfigurePage(page);
+            page.Content().Column(col => RenderContent(col, user, logoBytes));
+        })).GeneratePdf(filePath);
 
-                page.Content().Column(column =>
-                {
-                    column.Item().AlignCenter().PaddingBottom(2)
-                        .MaxWidth(25, Unit.Millimetre)
-                        .Image(logoBytes);
-
-                    column.Item().PaddingVertical(1.5f).LineHorizontal(0.5f).LineColor(Colors.Blue.Darken2);
-
-                    column.Item().AlignCenter().PaddingBottom(1)
-                        .Text($"{user.Name} {user.Surname} {user.SecondSurname}")
-                        .FontSize(8).SemiBold().FontColor(Colors.Black);
-
-                    column.Item().AlignCenter()
-                        .Text($"Nº Carnet: {user.Id}")
-                        .FontSize(7).FontColor(Colors.Grey.Darken2);
-                });
-            });
-        });
-
-        document.GeneratePdf(filePath);
         return filePath;
     }
 
-    private byte[] LoadLogoBytes()
+    private void ConfigurePage(PageDescriptor page)
     {
-        Uri resourceUri = new Uri("pack://application:,,,/Presentation/Resources/Images/conex_logo.png", UriKind.Absolute);
-        System.Windows.Resources.StreamResourceInfo resourceInfo = System.Windows.Application.GetResourceStream(resourceUri);
+        page.Size(BadgeWidthMm, BadgeHeightMm, Unit.Millimetre);
+        page.Margin(BadgeMarginMm, Unit.Millimetre);
+        page.PageColor(Colors.White);
+        page.DefaultTextStyle(x => x.FontFamily(Fonts.Arial));
+    }
 
-        if (resourceInfo == null)
-            throw new FileNotFoundException("No se encontró el logo de CONEX.");
+    private void RenderContent(ColumnDescriptor col, UserDto user, byte[] logoBytes)
+    {
+        RenderLogo(col, logoBytes);
+        RenderDivider(col);
+        RenderUserName(col, user);
+        RenderCardNumber(col, user);
+    }
 
-        using MemoryStream ms = new MemoryStream();
-        resourceInfo.Stream.CopyTo(ms);
-        return ms.ToArray();
+    private void RenderLogo(ColumnDescriptor col, byte[] logoBytes)
+    {
+        col.Item()
+            .AlignCenter().PaddingBottom(2)
+            .MaxWidth(LogoMaxWidthMm, Unit.Millimetre)
+            .Image(logoBytes);
+    }
+
+    private void RenderDivider(ColumnDescriptor col)
+    {
+        col.Item()
+            .PaddingVertical(DividerPaddingV)
+            .LineHorizontal(ThinLineWeight).LineColor(ColorPrimaryLight);
+    }
+
+    private void RenderUserName(ColumnDescriptor col, UserDto user)
+    {
+        col.Item().AlignCenter().PaddingBottom(1)
+            .Text($"{user.Name} {user.Surname} {user.SecondSurname}")
+            .FontSize(NameFontSize).SemiBold().FontColor(Colors.Black);
+    }
+
+    private void RenderCardNumber(ColumnDescriptor col, UserDto user)
+    {
+        col.Item().AlignCenter()
+            .Text($"Nº Carnet: {user.Id}")
+            .FontSize(NumberFontSize).FontColor(ColorTextMuted);
     }
 }
