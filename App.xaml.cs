@@ -11,12 +11,6 @@ public partial class App : System.Windows.Application
     {
         base.OnStartup(e);
 
-        // ============================================================
-        // DATABASE MODE SELECTION
-        // Change this to switch between databases:
-        //   DatabaseMode.Test       → conex_app_test.db  (original, sin importar)
-        //   DatabaseMode.Production → conex_app.db       (con usuarios importados)
-        // ============================================================
         AppDbContext.Mode = DatabaseMode.Production;
 
         ImportUsersIfNeeded();
@@ -24,7 +18,6 @@ public partial class App : System.Windows.Application
 
     private void ImportUsersIfNeeded()
     {
-        // Only import into the production database
         if (AppDbContext.Mode != DatabaseMode.Production)
             return;
 
@@ -33,7 +26,6 @@ public partial class App : System.Windows.Application
 
         string flagFile = sqlFile + ".imported";
 
-        // Skip if already imported or SQL file doesn't exist
         if (File.Exists(flagFile) || !File.Exists(sqlFile))
             return;
 
@@ -43,7 +35,6 @@ public partial class App : System.Windows.Application
             string sql = File.ReadAllText(sqlFile);
             dbContext.Database.ExecuteSqlRaw(sql);
 
-            // Create flag file so we don't re-import
             File.WriteAllText(flagFile, $"Imported on {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
 
             MessageBox.Show(

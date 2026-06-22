@@ -1,6 +1,7 @@
 using System.Collections.ObjectModel;
 using System.Windows.Input;
 using CONEX_APP.MainApplication.DTOs;
+using CONEX_APP.MainApplication.UseCases.Registrations;
 using CONEX_APP.MainApplication.UseCases.Users;
 using CONEX_APP.Presentation.Commands;
 using CONEX_APP.Presentation.Helpers.Reports;
@@ -20,6 +21,8 @@ public class UserListViewModel : ViewModelBase
 
     private readonly GetActivityUseCase _getActivityUseCase;
 
+    private readonly RemoveUserFromActivityUseCase _removeUserFromActivityUseCase;
+
     public ObservableCollection<UserDto> Users { get; set; }
 
     private UserDto? _selectedUser;
@@ -38,13 +41,14 @@ public class UserListViewModel : ViewModelBase
     public ICommand PrintRegistrationFormCommand { get; }
     public ICommand PrintRenewalReceiptCommand { get; }
 
-    public UserListViewModel(GetUsersUseCase getUsersUseCase, CreateUserUseCase createUserUseCase, UpdateUserUseCase updateUserUseCase, DeleteUserUseCase deleteUserUseCase, GetActivityUseCase getActivityUseCase, Action goBack, Action goToActivities)
+    public UserListViewModel(GetUsersUseCase getUsersUseCase, CreateUserUseCase createUserUseCase, UpdateUserUseCase updateUserUseCase, DeleteUserUseCase deleteUserUseCase, GetActivityUseCase getActivityUseCase, RemoveUserFromActivityUseCase removeUserFromActivityUseCase, Action goBack, Action goToActivities)
     {
         _getUsersUseCase = getUsersUseCase;
         _createUserUseCase = createUserUseCase;
         _updateUserUseCase = updateUserUseCase;
         _deleteUserUseCase = deleteUserUseCase;
         _getActivityUseCase = getActivityUseCase;
+        _removeUserFromActivityUseCase = removeUserFromActivityUseCase;
         Users = new ObservableCollection<UserDto>();
         
         OpenAddUserWindowCommand = new RelayCommand(_ => OpenAddUserWindow());
@@ -61,7 +65,7 @@ public class UserListViewModel : ViewModelBase
 
     private void OpenAddUserWindow()
     {
-        AddUserViewModel addUserViewModel = new AddUserViewModel(_createUserUseCase, _updateUserUseCase, _getActivityUseCase);
+        AddUserViewModel addUserViewModel = new AddUserViewModel(_createUserUseCase, _updateUserUseCase, _getActivityUseCase, _removeUserFromActivityUseCase);
         AddUserWindow addUserWindow = new AddUserWindow(addUserViewModel);
         
         addUserWindow.ShowDialog();
@@ -76,7 +80,7 @@ public class UserListViewModel : ViewModelBase
     {
         if (SelectedUser != null)
         {
-            AddUserViewModel addUserViewModel = new AddUserViewModel(_createUserUseCase, _updateUserUseCase, _getActivityUseCase, SelectedUser);
+            AddUserViewModel addUserViewModel = new AddUserViewModel(_createUserUseCase, _updateUserUseCase, _getActivityUseCase, _removeUserFromActivityUseCase, SelectedUser);
             AddUserWindow addUserWindow = new AddUserWindow(addUserViewModel);
             
             addUserWindow.ShowDialog();

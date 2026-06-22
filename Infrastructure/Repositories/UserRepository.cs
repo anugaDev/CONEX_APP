@@ -26,7 +26,6 @@ public class UserRepository : IUserRepository
         if (excludeId.HasValue)
             query = query.Where(u => u.Id != excludeId.Value);
 
-        // Si el DNI no está vacío, comprobar duplicado por DNI
         if (!string.IsNullOrWhiteSpace(idCard))
         {
             bool existsByIdCard = await query.AnyAsync(u =>
@@ -35,7 +34,6 @@ public class UserRepository : IUserRepository
             if (existsByIdCard) return true;
         }
 
-        // Comprobar duplicado por nombre completo (insensible a mayúsculas)
         return await query.AnyAsync(u =>
             u.Name.ToLower() == name.ToLower() &&
             u.Surname.ToLower() == surname.ToLower() &&

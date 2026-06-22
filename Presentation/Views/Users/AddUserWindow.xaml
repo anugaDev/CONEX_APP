@@ -38,10 +38,31 @@
                 <CheckBox Content="Es Tutor" IsChecked="{Binding IsTutor}" Margin="0,0,0,20"/>
 
                 <TextBlock Text="Añadir a Clase/Actividad:" Margin="0,0,0,5"/>
-                <ComboBox ItemsSource="{Binding AvailableActivities}" SelectedItem="{Binding SelectedActivityToAdd, UpdateSourceTrigger=PropertyChanged}" DisplayMemberPath="Name" Margin="0,0,0,5" Padding="5"/>
+                <ComboBox ItemsSource="{Binding AvailableActivities}" SelectedItem="{Binding SelectedActivityToAdd, UpdateSourceTrigger=PropertyChanged}" DisplayMemberPath="Name" Margin="0,0,0,10" Padding="5"/>
                 
-                <TextBlock Text="Clases Seleccionadas:" Margin="0,0,0,5" FontSize="11" Foreground="Gray"/>
-                <ListBox ItemsSource="{Binding SelectedActivities}" DisplayMemberPath="Name" Height="60" Margin="0,0,0,15"/>
+                <TextBlock Text="Clases Apuntado:" Margin="0,0,0,5" FontSize="11" Foreground="Gray"/>
+                <Grid Margin="0,0,0,15">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <ListBox Grid.Column="0"
+                             ItemsSource="{Binding SelectedActivities}"
+                             SelectedItem="{Binding SelectedActivityToRemove, Mode=TwoWay}"
+                             DisplayMemberPath="Name"
+                             Height="80"
+                             Margin="0,0,5,0"/>
+                    <Button Grid.Column="1"
+                            Content="✖ Quitar&#x0a;de clase"
+                            Command="{Binding RemoveActivityCommand}"
+                            Width="70"
+                            VerticalAlignment="Stretch"
+                            Background="#CC3300"
+                            Foreground="White"
+                            FontSize="11"
+                            FontWeight="Bold"
+                            Padding="4"/>
+                </Grid>
 
             </StackPanel>
         </ScrollViewer>

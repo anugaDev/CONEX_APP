@@ -2,6 +2,7 @@ using System.Windows;
 using CONEX_APP.Infrastructure.Data.Context;
 using CONEX_APP.Infrastructure.Repositories;
 using CONEX_APP.MainApplication.UseCases.Users;
+using CONEX_APP.MainApplication.UseCases.Registrations;
 using CONEX_APP.Presentation.ViewModels;
 using CONEX_APP.Presentation.ViewModels.Classes;
 using CONEX_APP.Presentation.ViewModels.Reports;
@@ -24,6 +25,7 @@ public partial class MainWindow : Window
     private readonly CreateActivityUseCase _createActivityUseCase;
     private readonly UpdateActivityUseCase _updateActivityUseCase;
     private readonly DeleteActivityUseCase _deleteActivityUseCase;
+    private readonly RemoveUserFromActivityUseCase _removeUserFromActivityUseCase;
 
     public MainWindow()
     {
@@ -31,7 +33,6 @@ public partial class MainWindow : Window
 
         _dbContext = new AppDbContext();
 
-        // Parche de seguridad para crear la tabla si las migraciones fallan por entorno
         Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.ExecuteSqlRaw(_dbContext.Database, @"
             CREATE TABLE IF NOT EXISTS Activities (
                 Id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -48,6 +49,7 @@ public partial class MainWindow : Window
         _createUserUseCase = new CreateUserUseCase(_userRepository);
         _updateUserUseCase = new UpdateUserUseCase(_userRepository);
         _deleteUserUseCase = new DeleteUserUseCase(_userRepository);
+        _removeUserFromActivityUseCase = new RemoveUserFromActivityUseCase(_userRepository);
 
         ActivityRepository activityRepository = new ActivityRepository(_dbContext);
         _getActivityUseCase = new GetActivityUseCase(activityRepository);
@@ -88,6 +90,7 @@ public partial class MainWindow : Window
             _updateUserUseCase,
             _deleteUserUseCase,
             _getActivityUseCase,
+            _removeUserFromActivityUseCase,
             goBack: NavigateToHome,
             goToActivities: NavigateToClasses
         );
@@ -101,6 +104,7 @@ public partial class MainWindow : Window
             _updateActivityUseCase,
             _deleteActivityUseCase,
             _getUsersUseCase,
+            _removeUserFromActivityUseCase,
             goBack: NavigateToHome,
             goToUsers: NavigateToUsers
         );

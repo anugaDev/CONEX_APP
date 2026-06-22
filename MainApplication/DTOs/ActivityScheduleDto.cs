@@ -1,5 +1,11 @@
 namespace CONEX_APP.Application.DTOs;
 
+public class EnrolledStudentDto
+{
+    public int Id { get; set; }
+    public string FullName { get; set; } = string.Empty;
+}
+
 public class ActivityScheduleDto
 {
     public int Id { get; set; }
@@ -18,8 +24,10 @@ public class ActivityScheduleDto
     
     public string Occupancy => $"{EnrolledStudentsCount} / {MaxStudents}";
     
+    public List<EnrolledStudentDto> EnrolledStudents { get; set; } = new();
+
     public List<string> EnrolledStudentNames { get; set; } = new();
     
     public DateTime CreatedAt { get; set; }
 
-}
+}

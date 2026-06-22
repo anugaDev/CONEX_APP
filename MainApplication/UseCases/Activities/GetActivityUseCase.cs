@@ -26,6 +26,11 @@ public class GetActivityUseCase
             Classroom = activity.Classroom,
             MaxStudents = activity.MaxStudents,
             EnrolledStudentsCount = activity.Students.Count,
+            EnrolledStudents = activity.Students.Select(s => new EnrolledStudentDto
+            {
+                Id = s.Id,
+                FullName = string.Join(" ", new[] { s.Name, s.Surname, s.SecondSurname }.Where(p => !string.IsNullOrWhiteSpace(p)))
+            }).ToList(),
             EnrolledStudentNames = activity.Students.Select(s => $"{s.Name} {s.Surname}").ToList()
         });
     }

@@ -8,6 +8,7 @@
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
+        <!-- Cabecera -->
         <Grid Grid.Row="0" Margin="0,0,0,10">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="Auto"/>
@@ -22,6 +23,7 @@
                     Background="#28A745" Foreground="White" FontWeight="Bold"/>
         </Grid>
         
+        <!-- Barra de acciones -->
         <StackPanel Grid.Row="1" Orientation="Horizontal" Margin="0,0,0,10">
             <Button Content="Añadir Nueva Actividad" Command="{Binding OpenAddUserWindowCommand}" 
                     Padding="10,5" Margin="0,0,10,0" 
@@ -36,7 +38,11 @@
                     Background="#6C757D" Foreground="White" FontWeight="Bold"/>
         </StackPanel>
 
-        <DataGrid Grid.Row="2" ItemsSource="{Binding ActivitySchedule}" SelectedItem="{Binding SelectedActivity, Mode=TwoWay}" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single">
+        <!-- Tabla de actividades -->
+        <DataGrid Grid.Row="2"
+                  ItemsSource="{Binding ActivitySchedule}"
+                  SelectedItem="{Binding SelectedActivity, Mode=TwoWay}"
+                  AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single">
             <DataGrid.InputBindings>
                 <MouseBinding MouseAction="LeftDoubleClick" Command="{Binding EditActivityCommand}" />
             </DataGrid.InputBindings>

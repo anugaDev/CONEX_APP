@@ -5,6 +5,7 @@ using CONEX_APP.Domain.Exceptions;
 using CONEX_APP.MainApplication.DTOs;
 using CONEX_APP.Application.DTOs;
 using CONEX_APP.MainApplication.UseCases.Activities;
+using CONEX_APP.MainApplication.UseCases.Registrations;
 using CONEX_APP.MainApplication.UseCases.Users;
 using CONEX_APP.Presentation.Commands;
 
@@ -15,6 +16,7 @@ public class AddUserViewModel : ViewModelBase
     private readonly CreateUserUseCase _createUserUseCase;
     private readonly UpdateUserUseCase _updateUserUseCase;
     private readonly GetActivityUseCase _getActivityUseCase;
+    private readonly RemoveUserFromActivityUseCase _removeUserFromActivityUseCase;
 
     private readonly int? _editingUserId;
 
@@ -102,6 +104,17 @@ public class AddUserViewModel : ViewModelBase
         set => SetProperty(ref _isTutor, value);
     }
 
+    private ActivityScheduleDto? _selectedActivityToRemove;
+    public ActivityScheduleDto? SelectedActivityToRemove
+    {
+        get => _selectedActivityToRemove;
+        set
+        {
+            SetProperty(ref _selectedActivityToRemove, value);
+            ((RelayCommand)RemoveActivityCommand).RaiseCanExecuteChanged();
+        }
+    }
+
     public ObservableCollection<ActivityScheduleDto> AvailableActivities { get; } = new();
     public ObservableCollection<ActivityScheduleDto> SelectedActivities { get; } = new();
 
@@ -123,15 +136,18 @@ public class AddUserViewModel : ViewModelBase
 
     public ICommand SaveCommand { get; }
     public ICommand CancelCommand { get; }
+    public ICommand RemoveActivityCommand { get; }
 
-    public AddUserViewModel(CreateUserUseCase createUserUseCase, UpdateUserUseCase updateUserUseCase, GetActivityUseCase getActivityUseCase, UserDto? userToEdit = null)
+    public AddUserViewModel(CreateUserUseCase createUserUseCase, UpdateUserUseCase updateUserUseCase, GetActivityUseCase getActivityUseCase, RemoveUserFromActivityUseCase removeUserFromActivityUseCase, UserDto? userToEdit = null)
     {
         _createUserUseCase = createUserUseCase;
         _updateUserUseCase = updateUserUseCase;
         _getActivityUseCase = getActivityUseCase;
+        _removeUserFromActivityUseCase = removeUserFromActivityUseCase;
         
         SaveCommand = new RelayCommand(async _ => await SaveAsync(), _ => CanSave());
         CancelCommand = new RelayCommand(_ => Cancel());
+        RemoveActivityCommand = new RelayCommand(async _ => await RemoveActivityAsync(), _ => SelectedActivityToRemove != null && _editingUserId.HasValue);
 
         if (userToEdit != null)
         {
@@ -180,6 +196,35 @@ public class AddUserViewModel : ViewModelBase
     private bool CanSave()
     {
         return !string.IsNullOrWhiteSpace(Name) && !string.IsNullOrWhiteSpace(Email);
+    }
+
+    private async Task RemoveActivityAsync()
+    {
+        if (SelectedActivityToRemove == null || !_editingUserId.HasValue) return;
+
+        ActivityScheduleDto actToRemove = SelectedActivityToRemove;
+
+        MessageBoxResult confirm = MessageBox.Show(
+            $"¿Eliminar al usuario de la clase \"{actToRemove.Name}\"?",
+            "Confirmar baja de clase",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Question);
+
+        if (confirm != MessageBoxResult.Yes) return;
+
+        try
+        {
+            await _removeUserFromActivityUseCase.ExecuteAsync(_editingUserId.Value, actToRemove.Id);
+            SelectedActivities.Remove(actToRemove);
+            if (actToRemove.MaxStudents == 0 || actToRemove.EnrolledStudentsCount - 1 < actToRemove.MaxStudents)
+                AvailableActivities.Add(actToRemove);
+            SelectedActivityToRemove = null;
+            WasSaved = true;
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error al eliminar de la clase: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
     }
 
     private async Task SaveAsync()
