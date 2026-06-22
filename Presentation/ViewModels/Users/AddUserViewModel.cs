@@ -163,7 +163,7 @@ public class AddUserViewModel : ViewModelBase
                 {
                     SelectedActivities.Add(act);
                 }
-                else if (act.EnrolledStudentsCount < act.MaxStudents)
+                else if (act.MaxStudents == 0 || act.EnrolledStudentsCount < act.MaxStudents)
                 {
                     AvailableActivities.Add(act);
                 }

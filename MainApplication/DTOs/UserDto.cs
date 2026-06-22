@@ -26,7 +26,7 @@ public class UserDto
 
     public List<int> EnrolledActivityIds { get; set; } = new();
 
-    public string FullName => $"{Name} {Surname}";
+    public string FullName => string.Join(" ", new[] { Name, Surname, SecondSurname }.Where(s => !string.IsNullOrWhiteSpace(s)));
     
     public DateTime CreatedAt { get; set; }
 
