@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using CONEX_APP.Domain.Entities;
+using CONEX_APP.Domain.Exceptions;
 using CONEX_APP.Domain.Interfaces;
 using CONEX_APP.MainApplication.DTOs;
 
@@ -16,6 +17,11 @@ public class UpdateActivityUseCase
 
     public async Task ExecuteAsync(UpdateActivityDto dto)
     {
+        bool exists = await _activityRepository.ExistsAsync(dto.Name, excludeId: dto.Id);
+        if (exists)
+            throw new DuplicateEntityException(
+                $"Ya existe otra actividad con el nombre \"{dto.Name}\".");
+
         Activity activity = new Activity
         {
             Id = dto.Id,

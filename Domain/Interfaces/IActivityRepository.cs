@@ -8,4 +8,5 @@ public interface IActivityRepository
     Task AddAsync(Activity activity);
     Task UpdateAsync(Activity activity);
     Task DeleteAsync(int id);
+    Task<bool> ExistsAsync(string name, int? excludeId = null);
 }

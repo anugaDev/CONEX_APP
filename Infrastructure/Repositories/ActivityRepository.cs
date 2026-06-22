@@ -19,6 +19,16 @@ public class ActivityRepository : IActivityRepository
         return await _context.Activities.Include(a => a.Students).ToListAsync();
     }
 
+    public async Task<bool> ExistsAsync(string name, int? excludeId = null)
+    {
+        IQueryable<Activity> query = _context.Activities.AsQueryable();
+
+        if (excludeId.HasValue)
+            query = query.Where(a => a.Id != excludeId.Value);
+
+        return await query.AnyAsync(a => a.Name.ToLower() == name.ToLower());
+    }
+
     public async Task AddAsync(Activity activity)
     {
         _context.Activities.Add(activity);

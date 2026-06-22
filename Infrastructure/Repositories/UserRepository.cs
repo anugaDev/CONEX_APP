@@ -19,6 +19,29 @@ public class UserRepository : IUserRepository
         return await _context.Users.Include(u => u.Activities).ToListAsync();
     }
 
+    public async Task<bool> ExistsAsync(string idCard, string name, string surname, string secondSurname, int? excludeId = null)
+    {
+        IQueryable<User> query = _context.Users.AsQueryable();
+
+        if (excludeId.HasValue)
+            query = query.Where(u => u.Id != excludeId.Value);
+
+        // Si el DNI no está vacío, comprobar duplicado por DNI
+        if (!string.IsNullOrWhiteSpace(idCard))
+        {
+            bool existsByIdCard = await query.AnyAsync(u =>
+                !string.IsNullOrWhiteSpace(u.IdCard) &&
+                u.IdCard.ToLower() == idCard.ToLower());
+            if (existsByIdCard) return true;
+        }
+
+        // Comprobar duplicado por nombre completo (insensible a mayúsculas)
+        return await query.AnyAsync(u =>
+            u.Name.ToLower() == name.ToLower() &&
+            u.Surname.ToLower() == surname.ToLower() &&
+            u.SecondSurname.ToLower() == secondSurname.ToLower());
+    }
+
     public async Task AddAsync(User user, IEnumerable<int>? activityIds = null)
     {
         if (activityIds != null && activityIds.Any())

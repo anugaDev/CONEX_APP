@@ -8,4 +8,5 @@ public interface IUserRepository
     Task AddAsync(User user, IEnumerable<int>? activityIds = null);
     Task UpdateAsync(User user, IEnumerable<int>? activityIds = null);
     Task DeleteAsync(int id);
+    Task<bool> ExistsAsync(string idCard, string name, string surname, string secondSurname, int? excludeId = null);
 }

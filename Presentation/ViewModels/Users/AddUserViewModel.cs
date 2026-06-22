@@ -1,5 +1,7 @@
 using System.Collections.ObjectModel;
+using System.Windows;
 using System.Windows.Input;
+using CONEX_APP.Domain.Exceptions;
 using CONEX_APP.MainApplication.DTOs;
 using CONEX_APP.Application.DTOs;
 using CONEX_APP.MainApplication.UseCases.Activities;
@@ -182,32 +184,39 @@ public class AddUserViewModel : ViewModelBase
 
     private async Task SaveAsync()
     {
-        if (_editingUserId.HasValue)
+        try
         {
-            UpdateUserDto dto = new UpdateUserDto
+            if (_editingUserId.HasValue)
             {
-                Id = _editingUserId.Value,
-                Name = Name, 
-                Surname = Surname,
-                SecondSurname = SecondSurname,
-                Email = Email,
-                Phone = Phone,
-                Address = Address,
-                Location = Location,
-                IdCard = IdCard,
-                IsPartner = IsPartner,
-                IsTutor = IsTutor,
-                SelectedActivityIds = SelectedActivities.Select(a => a.Id).ToList()
-            };
-            await _updateUserUseCase.ExecuteAsync(dto);
+                UpdateUserDto dto = new UpdateUserDto
+                {
+                    Id = _editingUserId.Value,
+                    Name = Name, 
+                    Surname = Surname,
+                    SecondSurname = SecondSurname,
+                    Email = Email,
+                    Phone = Phone,
+                    Address = Address,
+                    Location = Location,
+                    IdCard = IdCard,
+                    IsPartner = IsPartner,
+                    IsTutor = IsTutor,
+                    SelectedActivityIds = SelectedActivities.Select(a => a.Id).ToList()
+                };
+                await _updateUserUseCase.ExecuteAsync(dto);
+            }
+            else
+            {
+                CreateUserDto dto = GetNewUSerDto();
+                await _createUserUseCase.ExecuteAsync(dto);
+            }
+            WasSaved = true;
+            CloseAction?.Invoke();
         }
-        else
+        catch (DuplicateEntityException ex)
         {
-            CreateUserDto dto = GetNewUSerDto();
-            await _createUserUseCase.ExecuteAsync(dto);
+            MessageBox.Show(ex.Message, "Usuario duplicado", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
-        WasSaved = true;
-        CloseAction?.Invoke();
     }
 
     private CreateUserDto GetNewUSerDto()

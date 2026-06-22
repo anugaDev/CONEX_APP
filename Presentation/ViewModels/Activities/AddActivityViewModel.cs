@@ -1,5 +1,7 @@
 using System.Collections.ObjectModel;
+using System.Windows;
 using System.Windows.Input;
+using CONEX_APP.Domain.Exceptions;
 using CONEX_APP.MainApplication.DTOs;
 using CONEX_APP.Application.DTOs;
 using CONEX_APP.MainApplication.UseCases.Activities;
@@ -155,36 +157,43 @@ public class AddActivityViewModel : ViewModelBase
     
     private async Task SaveAsync()
     {
-        ActivityDateCalculator dateCalculator = new ActivityDateCalculator();
+        try
+        {
+            ActivityDateCalculator dateCalculator = new ActivityDateCalculator();
 
-        if (_editingActivityId.HasValue)
-        {
-            UpdateActivityDto dto = new UpdateActivityDto()
+            if (_editingActivityId.HasValue)
             {
-                Id = _editingActivityId.Value,
-                Name = Name, 
-                Tutor = SelectedTutor!.FullName, 
-                Classroom = _classRoom, 
-                MaxStudents = _maxStudents,
-                Date = dateCalculator.GetNextOccurrence(SelectedDay, SelectedTime) 
-            };
-            await _updateActivityUseCase.ExecuteAsync(dto);
+                UpdateActivityDto dto = new UpdateActivityDto()
+                {
+                    Id = _editingActivityId.Value,
+                    Name = Name, 
+                    Tutor = SelectedTutor!.FullName, 
+                    Classroom = _classRoom, 
+                    MaxStudents = _maxStudents,
+                    Date = dateCalculator.GetNextOccurrence(SelectedDay, SelectedTime) 
+                };
+                await _updateActivityUseCase.ExecuteAsync(dto);
+            }
+            else
+            {
+                CreateActivityDto dto = new CreateActivityDto() 
+                { 
+                    Name = Name, 
+                    Tutor = SelectedTutor!.FullName, 
+                    Classroom = _classRoom, 
+                    MaxStudents = _maxStudents,
+                    Date = dateCalculator.GetNextOccurrence(SelectedDay, SelectedTime) 
+                };
+                await _createActivityUseCase.ExecuteAsync(dto);
+            }
+            
+            WasSaved = true;
+            CloseAction?.Invoke();
         }
-        else
+        catch (DuplicateEntityException ex)
         {
-            CreateActivityDto dto = new CreateActivityDto() 
-            { 
-                Name = Name, 
-                Tutor = SelectedTutor!.FullName, 
-                Classroom = _classRoom, 
-                MaxStudents = _maxStudents,
-                Date = dateCalculator.GetNextOccurrence(SelectedDay, SelectedTime) 
-            };
-            await _createActivityUseCase.ExecuteAsync(dto);
+            MessageBox.Show(ex.Message, "Actividad duplicada", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
-        
-        WasSaved = true;
-        CloseAction?.Invoke();
     }
 
     private void Cancel()

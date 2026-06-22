@@ -1,4 +1,5 @@
 using CONEX_APP.Domain.Entities;
+using CONEX_APP.Domain.Exceptions;
 using CONEX_APP.Domain.Interfaces;
 using CONEX_APP.MainApplication.DTOs;
 
@@ -15,7 +16,12 @@ public class CreateActivityUseCase
 
     public async Task ExecuteAsync(CreateActivityDto dto)
     {
-        Activity user = new Activity()
+        bool exists = await _activityRepository.ExistsAsync(dto.Name);
+        if (exists)
+            throw new DuplicateEntityException(
+                $"Ya existe una actividad con el nombre \"{dto.Name}\".");
+
+        Activity activity = new Activity()
         {
             Name = dto.Name,
             Tutor = dto.Tutor,
@@ -25,6 +31,6 @@ public class CreateActivityUseCase
             CreatedAt = DateTime.UtcNow,
         };
 
-        await _activityRepository.AddAsync(user);
+        await _activityRepository.AddAsync(activity);
     }
 }

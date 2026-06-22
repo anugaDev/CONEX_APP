@@ -1,5 +1,6 @@
 using System.Threading.Tasks;
 using CONEX_APP.Domain.Entities;
+using CONEX_APP.Domain.Exceptions;
 using CONEX_APP.Domain.Interfaces;
 using CONEX_APP.MainApplication.DTOs;
 
@@ -16,6 +17,11 @@ public class UpdateUserUseCase
 
     public async Task ExecuteAsync(UpdateUserDto dto)
     {
+        bool exists = await _userRepository.ExistsAsync(dto.IdCard, dto.Name, dto.Surname, dto.SecondSurname, excludeId: dto.Id);
+        if (exists)
+            throw new DuplicateEntityException(
+                $"Ya existe otro usuario con el mismo DNI o nombre completo: {dto.Name} {dto.Surname} {dto.SecondSurname}".Trim());
+
         User user = new User
         {
             Id = dto.Id,
