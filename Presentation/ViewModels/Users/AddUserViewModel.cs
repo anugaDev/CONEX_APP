@@ -147,7 +147,7 @@ public class AddUserViewModel : ViewModelBase
         
         SaveCommand = new RelayCommand(async _ => await SaveAsync(), _ => CanSave());
         CancelCommand = new RelayCommand(_ => Cancel());
-        RemoveActivityCommand = new RelayCommand(async _ => await RemoveActivityAsync(), _ => SelectedActivityToRemove != null && _editingUserId.HasValue);
+        RemoveActivityCommand = new RelayCommand(async _ => await RemoveActivityAsync(), _ => SelectedActivityToRemove != null);
 
         if (userToEdit != null)
         {
@@ -200,10 +200,21 @@ public class AddUserViewModel : ViewModelBase
 
     private async Task RemoveActivityAsync()
     {
-        if (SelectedActivityToRemove == null || !_editingUserId.HasValue) return;
+        if (SelectedActivityToRemove == null) return;
 
         ActivityScheduleDto actToRemove = SelectedActivityToRemove;
 
+        // New user: just remove from the list in memory, no DB call needed
+        if (!_editingUserId.HasValue)
+        {
+            SelectedActivities.Remove(actToRemove);
+            if (actToRemove.MaxStudents == 0 || actToRemove.EnrolledStudentsCount < actToRemove.MaxStudents)
+                AvailableActivities.Add(actToRemove);
+            SelectedActivityToRemove = null;
+            return;
+        }
+
+        // Existing user: confirm and call the use case
         MessageBoxResult confirm = MessageBox.Show(
             $"¿Eliminar al usuario de la clase \"{actToRemove.Name}\"?",
             "Confirmar baja de clase",
