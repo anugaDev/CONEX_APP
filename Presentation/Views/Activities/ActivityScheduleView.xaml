@@ -5,6 +5,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
@@ -38,9 +39,25 @@
                     Background="#6C757D" Foreground="White" FontWeight="Bold"/>
         </StackPanel>
 
+        <!-- Barra de búsqueda -->
+        <Grid Grid.Row="2" Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBox Grid.Column="0"
+                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                     Padding="8,5" FontSize="14"
+                     ToolTip="Buscar por nombre de actividad, tutor o aula..."/>
+            <Button Grid.Column="1" Content="✕" Width="32"
+                    Command="{Binding ClearSearchCommand}"
+                    Padding="5" Margin="4,0,0,0"
+                    ToolTip="Limpiar búsqueda"/>
+        </Grid>
+
         <!-- Tabla de actividades -->
-        <DataGrid Grid.Row="2"
-                  ItemsSource="{Binding ActivitySchedule}"
+        <DataGrid Grid.Row="3"
+                  ItemsSource="{Binding ActivityScheduleView}"
                   SelectedItem="{Binding SelectedActivity, Mode=TwoWay}"
                   AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single">
             <DataGrid.InputBindings>

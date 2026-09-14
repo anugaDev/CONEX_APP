@@ -1,6 +1,8 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Diagnostics;
 using System.Windows;
+using System.Windows.Data;
 using System.Windows.Input;
 using CONEX_APP.Application.DTOs;
 using CONEX_APP.MainApplication.UseCases.Activities;
@@ -23,6 +25,19 @@ public class ActivityScheduleViewModel : ViewModelBase
 
     public ObservableCollection<ActivityScheduleDto> ActivitySchedule { get; set; }
 
+    public ICollectionView ActivityScheduleView { get; }
+
+    private string _searchText = string.Empty;
+    public string SearchText
+    {
+        get => _searchText;
+        set
+        {
+            if (SetProperty(ref _searchText, value))
+                ActivityScheduleView.Refresh();
+        }
+    }
+
     private ActivityScheduleDto? _selectedActivity;
     public ActivityScheduleDto? SelectedActivity
     {
@@ -36,6 +51,7 @@ public class ActivityScheduleViewModel : ViewModelBase
     public ICommand PrintAttendanceCommand { get; }
     public ICommand GoBackCommand { get; }
     public ICommand GoToUsersCommand { get; }
+    public ICommand ClearSearchCommand { get; }
 
     public ActivityScheduleViewModel(
         GetActivityUseCase getActivitiesUseCase,
@@ -54,6 +70,8 @@ public class ActivityScheduleViewModel : ViewModelBase
         _getUsersUseCase = getUsersUseCase;
         _removeUserFromActivityUseCase = removeUserFromActivityUseCase;
         ActivitySchedule = new ObservableCollection<ActivityScheduleDto>();
+        ActivityScheduleView = CollectionViewSource.GetDefaultView(ActivitySchedule);
+        ActivityScheduleView.Filter = FilterActivity;
 
         OpenAddUserWindowCommand = new RelayCommand(_ => OpenAddActivityWindow());
         EditActivityCommand = new RelayCommand(_ => EditActivity(), _ => SelectedActivity != null);
@@ -61,6 +79,7 @@ public class ActivityScheduleViewModel : ViewModelBase
         PrintAttendanceCommand = new RelayCommand(_ => PrintAttendance(), _ => SelectedActivity != null);
         GoBackCommand = new RelayCommand(_ => goBack());
         GoToUsersCommand = new RelayCommand(_ => goToUsers());
+        ClearSearchCommand = new RelayCommand(_ => SearchText = string.Empty);
 
         _ = LoadActivitiesAsync();
     }
@@ -90,6 +109,20 @@ public class ActivityScheduleViewModel : ViewModelBase
 
         if (vm.WasSaved)
             _ = LoadActivitiesAsync();
+    }
+
+    private bool FilterActivity(object obj)
+    {
+        if (string.IsNullOrWhiteSpace(_searchText))
+            return true;
+
+        if (obj is not ActivityScheduleDto activity)
+            return false;
+
+        string search = _searchText.Trim().ToLowerInvariant();
+        return activity.Name.ToLowerInvariant().Contains(search)
+            || activity.Tutor.ToLowerInvariant().Contains(search)
+            || activity.Classroom.ToLowerInvariant().Contains(search);
     }
 
     public async Task LoadActivitiesAsync()

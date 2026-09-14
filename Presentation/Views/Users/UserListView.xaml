@@ -5,6 +5,7 @@
         <Grid.RowDefinitions>
             <RowDefinition Height="Auto"/>
             <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
             <RowDefinition Height="*"/>
         </Grid.RowDefinitions>
 
@@ -44,7 +45,23 @@
                     Background="#1B7A3E" Foreground="White" FontWeight="Bold"/>
         </StackPanel>
 
-        <DataGrid Grid.Row="2" ItemsSource="{Binding Users}" SelectedItem="{Binding SelectedUser, Mode=TwoWay}" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single">
+        <!-- Barra de búsqueda -->
+        <Grid Grid.Row="2" Margin="0,0,0,10">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="Auto"/>
+            </Grid.ColumnDefinitions>
+            <TextBox Grid.Column="0"
+                     Text="{Binding SearchText, UpdateSourceTrigger=PropertyChanged}"
+                     Padding="8,5" FontSize="14"
+                     ToolTip="Buscar por nombre, apellido, DNI, teléfono, correo..."/>
+            <Button Grid.Column="1" Content="✕" Width="32"
+                    Command="{Binding ClearSearchCommand}"
+                    Padding="5" Margin="4,0,0,0"
+                    ToolTip="Limpiar búsqueda"/>
+        </Grid>
+
+        <DataGrid Grid.Row="3" ItemsSource="{Binding UsersView}" SelectedItem="{Binding SelectedUser, Mode=TwoWay}" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single">
             <DataGrid.InputBindings>
                 <MouseBinding MouseAction="LeftDoubleClick" Command="{Binding EditUserCommand}" />
             </DataGrid.InputBindings>

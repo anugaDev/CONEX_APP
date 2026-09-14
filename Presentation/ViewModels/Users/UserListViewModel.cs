@@ -1,4 +1,6 @@
 using System.Collections.ObjectModel;
+using System.ComponentModel;
+using System.Windows.Data;
 using System.Windows.Input;
 using CONEX_APP.MainApplication.DTOs;
 using CONEX_APP.MainApplication.UseCases.Registrations;
@@ -25,6 +27,19 @@ public class UserListViewModel : ViewModelBase
 
     public ObservableCollection<UserDto> Users { get; set; }
 
+    public ICollectionView UsersView { get; }
+
+    private string _searchText = string.Empty;
+    public string SearchText
+    {
+        get => _searchText;
+        set
+        {
+            if (SetProperty(ref _searchText, value))
+                UsersView.Refresh();
+        }
+    }
+
     private UserDto? _selectedUser;
     public UserDto? SelectedUser
     {
@@ -40,6 +55,7 @@ public class UserListViewModel : ViewModelBase
     public ICommand PrintBadgeCommand { get; }
     public ICommand PrintRegistrationFormCommand { get; }
     public ICommand PrintRenewalReceiptCommand { get; }
+    public ICommand ClearSearchCommand { get; }
 
     public UserListViewModel(GetUsersUseCase getUsersUseCase, CreateUserUseCase createUserUseCase, UpdateUserUseCase updateUserUseCase, DeleteUserUseCase deleteUserUseCase, GetActivityUseCase getActivityUseCase, RemoveUserFromActivityUseCase removeUserFromActivityUseCase, Action goBack, Action goToActivities)
     {
@@ -50,6 +66,8 @@ public class UserListViewModel : ViewModelBase
         _getActivityUseCase = getActivityUseCase;
         _removeUserFromActivityUseCase = removeUserFromActivityUseCase;
         Users = new ObservableCollection<UserDto>();
+        UsersView = CollectionViewSource.GetDefaultView(Users);
+        UsersView.Filter = FilterUser;
         
         OpenAddUserWindowCommand = new RelayCommand(_ => OpenAddUserWindow());
         EditUserCommand = new RelayCommand(_ => EditUser(), _ => SelectedUser != null);
@@ -59,6 +77,7 @@ public class UserListViewModel : ViewModelBase
         PrintBadgeCommand = new RelayCommand(_ => PrintBadge(), _ => SelectedUser != null);
         PrintRegistrationFormCommand = new RelayCommand(_ => PrintRegistrationForm(), _ => SelectedUser != null);
         PrintRenewalReceiptCommand = new RelayCommand(_ => PrintRenewalReceipt(), _ => SelectedUser != null);
+        ClearSearchCommand = new RelayCommand(_ => SearchText = string.Empty);
 
         _ = LoadUsersAsync();
     }
@@ -90,6 +109,25 @@ public class UserListViewModel : ViewModelBase
                 _ = LoadUsersAsync();
             }
         }
+    }
+
+    private bool FilterUser(object obj)
+    {
+        if (string.IsNullOrWhiteSpace(_searchText))
+            return true;
+
+        if (obj is not UserDto user)
+            return false;
+
+        string search = _searchText.Trim().ToLowerInvariant();
+        return user.Name.ToLowerInvariant().Contains(search)
+            || user.Surname.ToLowerInvariant().Contains(search)
+            || user.SecondSurname.ToLowerInvariant().Contains(search)
+            || user.IdCard.ToLowerInvariant().Contains(search)
+            || user.Phone.ToLowerInvariant().Contains(search)
+            || user.Email.ToLowerInvariant().Contains(search)
+            || user.Address.ToLowerInvariant().Contains(search)
+            || user.Location.ToLowerInvariant().Contains(search);
     }
 
     public async Task LoadUsersAsync()
