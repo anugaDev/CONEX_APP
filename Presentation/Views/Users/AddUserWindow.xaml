@@ -132,15 +132,19 @@
                         <ColumnDefinition Width="*"/>
                         <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
-                    <ListBox Grid.Column="0"
+                    <ListBox x:Name="SelectedClassesListBox"
+                             Grid.Column="0"
                              ItemsSource="{Binding SelectedActivities}"
                              SelectedItem="{Binding SelectedActivityToRemove, Mode=TwoWay}"
                              DisplayMemberPath="Name"
                              Height="80"
-                             Margin="0,0,5,0"/>
-                    <Button Grid.Column="1"
+                             Margin="0,0,5,0"
+                             LostFocus="SelectedClassesListBox_LostFocus"/>
+                    <Button x:Name="RemoveClassButton"
+                            Grid.Column="1"
                             Content="✖ Quitar&#x0a;de clase"
                             Command="{Binding RemoveActivityCommand}"
+                            IsEnabled="{Binding CanRemoveActivity}"
                             Width="70"
                             VerticalAlignment="Stretch"
                             Background="#CC3300"

@@ -179,9 +179,12 @@ public class AddUserViewModel : ViewModelBase
         set
         {
             SetProperty(ref _selectedActivityToRemove, value);
+            OnPropertyChanged(nameof(CanRemoveActivity));
             ((RelayCommand)RemoveActivityCommand).RaiseCanExecuteChanged();
         }
     }
+
+    public bool CanRemoveActivity => _selectedActivityToRemove != null;
 
     public ObservableCollection<ActivityScheduleDto> AvailableActivities { get; } = new();
     public ObservableCollection<ActivityScheduleDto> SelectedActivities { get; } = new();

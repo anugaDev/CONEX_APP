@@ -6,6 +6,7 @@
     <Nullable>enable</Nullable>
     <ImplicitUsings>enable</ImplicitUsings>
     <UseWPF>true</UseWPF>
+    <ApplicationIcon>Presentation\Resources\Images\conex_logo.ico</ApplicationIcon>
   </PropertyGroup>
 
   <ItemGroup>
@@ -30,6 +31,7 @@
 
   <ItemGroup>
     <Resource Include="Presentation\Resources\Images\conex_logo.png" />
+    <Resource Include="Presentation\Resources\Images\conex_logo.ico" />
   </ItemGroup>
 
   <ItemGroup>
