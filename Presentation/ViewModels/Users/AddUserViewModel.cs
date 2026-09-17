@@ -43,17 +43,69 @@ public class AddUserViewModel : ViewModelBase
     
     private bool _isTutor = false;
 
+    // --- Errores de validación por campo ---
+    private string _nameError = string.Empty;
+    private string _surnameError = string.Empty;
+    private string _idCardError = string.Empty;
+    private string _emailError = string.Empty;
+
+    public string NameError
+    {
+        get => _nameError;
+        set => SetProperty(ref _nameError, value);
+    }
+
+    public string SurnameError
+    {
+        get => _surnameError;
+        set => SetProperty(ref _surnameError, value);
+    }
+
+    public string IdCardError
+    {
+        get => _idCardError;
+        set => SetProperty(ref _idCardError, value);
+    }
+
+    public string EmailError
+    {
+        get => _emailError;
+        set => SetProperty(ref _emailError, value);
+    }
+
+    // Verdadero cuando el campo tiene error (para trigger en XAML)
+    public bool HasNameError    => !string.IsNullOrEmpty(NameError);
+    public bool HasSurnameError => !string.IsNullOrEmpty(SurnameError);
+    public bool HasIdCardError  => !string.IsNullOrEmpty(IdCardError);
+    public bool HasEmailError   => !string.IsNullOrEmpty(EmailError);
+
     
     public string Name
     {
         get => _name;
-        set => SetProperty(ref _name, value);
+        set
+        {
+            SetProperty(ref _name, value);
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                NameError = string.Empty;
+                OnPropertyChanged(nameof(HasNameError));
+            }
+        }
     }
 
     public string Surname
     {
         get => _surname;
-        set => SetProperty(ref _surname, value);
+        set
+        {
+            SetProperty(ref _surname, value);
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                SurnameError = string.Empty;
+                OnPropertyChanged(nameof(HasSurnameError));
+            }
+        }
     }
 
     public string SecondSurname
@@ -65,7 +117,15 @@ public class AddUserViewModel : ViewModelBase
     public string IdCard
     {
         get => _idCard;
-        set => SetProperty(ref _idCard, value);
+        set
+        {
+            SetProperty(ref _idCard, value);
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                IdCardError = string.Empty;
+                OnPropertyChanged(nameof(HasIdCardError));
+            }
+        }
     }
 
     public string Phone
@@ -89,7 +149,15 @@ public class AddUserViewModel : ViewModelBase
     public string Email
     {
         get => _email;
-        set => SetProperty(ref _email, value);
+        set
+        {
+            SetProperty(ref _email, value);
+            if (!string.IsNullOrWhiteSpace(value))
+            {
+                EmailError = string.Empty;
+                OnPropertyChanged(nameof(HasEmailError));
+            }
+        }
     }
 
     public bool IsPartner
@@ -145,7 +213,7 @@ public class AddUserViewModel : ViewModelBase
         _getActivityUseCase = getActivityUseCase;
         _removeUserFromActivityUseCase = removeUserFromActivityUseCase;
         
-        SaveCommand = new RelayCommand(async _ => await SaveAsync(), _ => CanSave());
+        SaveCommand = new RelayCommand(async _ => await SaveAsync());
         CancelCommand = new RelayCommand(_ => Cancel());
         RemoveActivityCommand = new RelayCommand(async _ => await RemoveActivityAsync(), _ => SelectedActivityToRemove != null);
 
@@ -193,9 +261,42 @@ public class AddUserViewModel : ViewModelBase
         }
     }
 
-    private bool CanSave()
+    /// <summary>
+    /// Valida los campos obligatorios. Devuelve true si todo es correcto.
+    /// </summary>
+    private bool Validate()
     {
-        return !string.IsNullOrWhiteSpace(Name) && !string.IsNullOrWhiteSpace(Email);
+        bool valid = true;
+
+        if (string.IsNullOrWhiteSpace(Name))
+        {
+            NameError = "El nombre es obligatorio.";
+            OnPropertyChanged(nameof(HasNameError));
+            valid = false;
+        }
+
+        if (string.IsNullOrWhiteSpace(Surname))
+        {
+            SurnameError = "El primer apellido es obligatorio.";
+            OnPropertyChanged(nameof(HasSurnameError));
+            valid = false;
+        }
+
+        if (string.IsNullOrWhiteSpace(IdCard))
+        {
+            IdCardError = "El DNI/NIF es obligatorio.";
+            OnPropertyChanged(nameof(HasIdCardError));
+            valid = false;
+        }
+
+        if (string.IsNullOrWhiteSpace(Email))
+        {
+            EmailError = "El correo electrónico es obligatorio.";
+            OnPropertyChanged(nameof(HasEmailError));
+            valid = false;
+        }
+
+        return valid;
     }
 
     private async Task RemoveActivityAsync()
@@ -240,6 +341,8 @@ public class AddUserViewModel : ViewModelBase
 
     private async Task SaveAsync()
     {
+        if (!Validate()) return;
+
         try
         {
             if (_editingUserId.HasValue)
@@ -271,7 +374,9 @@ public class AddUserViewModel : ViewModelBase
         }
         catch (DuplicateEntityException ex)
         {
-            MessageBox.Show(ex.Message, "Usuario duplicado", MessageBoxButton.OK, MessageBoxImage.Warning);
+            // Mostrar el error en el campo DNI/NIF ya que suele ser el duplicado
+            IdCardError = ex.Message;
+            OnPropertyChanged(nameof(HasIdCardError));
         }
     }
 
