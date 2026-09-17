@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Windows.Data;
 using System.Windows.Input;
+using CONEX_APP.Application.DTOs;
 using CONEX_APP.MainApplication.DTOs;
 using CONEX_APP.MainApplication.UseCases.Registrations;
 using CONEX_APP.MainApplication.UseCases.Renewals;
@@ -10,6 +11,7 @@ using CONEX_APP.MainApplication.UseCases.Users;
 using CONEX_APP.Presentation.Commands;
 using CONEX_APP.Presentation.Helpers.Reports;
 using CONEX_APP.Presentation.ViewModels.Settings;
+using CONEX_APP.Presentation.Views.Renewals;
 using CONEX_APP.Presentation.Views.Settings;
 using CONEX_APP.Presentation.Views.Users;
 
@@ -190,28 +192,43 @@ public class UserListViewModel : ViewModelBase
     {
         if (SelectedUser == null) return;
 
-        System.Windows.MessageBoxResult result = System.Windows.MessageBox.Show(
-            $"¿Confirmar renovación para {SelectedUser.Name} {SelectedUser.Surname}?\n\nFecha: {DateTime.Today:dd/MM/yyyy}",
-            "Confirmar Renovación",
-            System.Windows.MessageBoxButton.YesNo,
-            System.Windows.MessageBoxImage.Question);
-
-        if (result == System.Windows.MessageBoxResult.Yes)
+        try
         {
-            try
+            // Capturamos el usuario antes de cualquier recarga que pueda limpiar la selección
+            UserDto userSnapshot = SelectedUser;
+
+            // 1. Obtener todas las clases en las que está inscrito el usuario
+            IEnumerable<ActivityScheduleDto> allActivities = await _getActivityUseCase.ExecuteAsync();
+            List<ActivityScheduleDto> enrolledActivities = allActivities
+                .Where(a => userSnapshot.EnrolledActivityIds.Contains(a.Id))
+                .ToList();
+
+            // 2. Abrir ventana de selección de clases
+            RenewalClassSelectionWindow selectionWindow = new RenewalClassSelectionWindow(enrolledActivities);
+            selectionWindow.ShowDialog();
+
+            // Si el usuario canceló, no hacemos nada
+            if (!selectionWindow.ViewModel.Confirmed) return;
+
+            IReadOnlyList<ActivityScheduleDto> selectedClasses = selectionWindow.ViewModel.SelectedActivities;
+
+            // 3. Registrar la renovación en la base de datos
+            await _registerRenewalUseCase.ExecuteAsync(userSnapshot.Id);
+            await LoadUsersAsync();
+
+            // 4. Generar e imprimir el recibo con las clases seleccionadas
+            UserRenewalReceiptGenerator generator = new UserRenewalReceiptGenerator();
+            string pdfPath = generator.GenerateReceipt(userSnapshot, selectedClasses);
+
+            System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo
             {
-                await _registerRenewalUseCase.ExecuteAsync(SelectedUser.Id);
-                await LoadUsersAsync();
-                System.Windows.MessageBox.Show(
-                    $"✔ Renovación registrada correctamente para {SelectedUser.Name} {SelectedUser.Surname}.",
-                    "Renovación Registrada",
-                    System.Windows.MessageBoxButton.OK,
-                    System.Windows.MessageBoxImage.Information);
-            }
-            catch (Exception ex)
-            {
-                System.Windows.MessageBox.Show($"Error al registrar la renovación: {ex.Message}");
-            }
+                FileName = pdfPath,
+                UseShellExecute = true
+            });
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show($"Error al procesar la renovación: {ex.Message}");
         }
     }
 

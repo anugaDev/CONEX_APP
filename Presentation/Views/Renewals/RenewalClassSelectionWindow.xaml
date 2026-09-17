@@ -1,0 +1,102 @@
+<Window x:Class="CONEX_APP.Presentation.Views.Renewals.RenewalClassSelectionWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="🔄 Seleccionar clases para el recibo"
+        Width="480" Height="420"
+        MinWidth="380" MinHeight="320"
+        WindowStartupLocation="CenterOwner"
+        ResizeMode="CanResize"
+        Background="#F7F8FA">
+
+    <Grid Margin="22">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="Auto"/>
+        </Grid.RowDefinitions>
+
+        <!-- Título -->
+        <TextBlock Grid.Row="0"
+                   Text="¿Qué clases se incluyen en el recibo?"
+                   FontSize="17" FontWeight="Bold"
+                   Foreground="#1A1A2E"
+                   Margin="0,0,0,6"/>
+
+        <TextBlock Grid.Row="1"
+                   Text="Marca las clases que quieres que aparezcan en el recibo de renovación. Todas están seleccionadas por defecto."
+                   FontSize="12" Foreground="#666"
+                   TextWrapping="Wrap"
+                   Margin="0,0,0,14"/>
+
+        <!-- Lista de clases con checkboxes -->
+        <Border Grid.Row="2"
+                BorderBrush="#DDDDDD" BorderThickness="1"
+                CornerRadius="4" Background="White">
+            <Grid>
+                <!-- Mensaje vacío: visible solo cuando no hay ítems -->
+                <TextBlock Text="Este usuario no está inscrito en ninguna clase."
+                           FontSize="13" Foreground="#AAAAAA"
+                           HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Visibility" Value="Collapsed"/>
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding Activities.Count}" Value="0">
+                                    <Setter Property="Visibility" Value="Visible"/>
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+
+                <ScrollViewer VerticalScrollBarVisibility="Auto" Padding="4">
+                    <ItemsControl ItemsSource="{Binding Activities}">
+                        <ItemsControl.ItemTemplate>
+                            <DataTemplate>
+                                <Border Padding="10,8" Margin="0,0,0,1"
+                                        Background="White">
+                                    <Border.Style>
+                                        <Style TargetType="Border">
+                                            <Style.Triggers>
+                                                <Trigger Property="IsMouseOver" Value="True">
+                                                    <Setter Property="Background" Value="#F0F4FF"/>
+                                                </Trigger>
+                                            </Style.Triggers>
+                                        </Style>
+                                    </Border.Style>
+                                    <CheckBox IsChecked="{Binding IsSelected, Mode=TwoWay}"
+                                              VerticalContentAlignment="Center">
+                                        <StackPanel Orientation="Vertical" Margin="6,0,0,0">
+                                            <TextBlock Text="{Binding Name}"
+                                                       FontSize="13" FontWeight="SemiBold"
+                                                       Foreground="#222"/>
+                                            <TextBlock Text="{Binding Tutor, StringFormat='Tutor/a: {0}'}"
+                                                       FontSize="11" Foreground="#888"
+                                                       Margin="0,2,0,0"/>
+                                        </StackPanel>
+                                    </CheckBox>
+                                </Border>
+                            </DataTemplate>
+                        </ItemsControl.ItemTemplate>
+                    </ItemsControl>
+                </ScrollViewer>
+            </Grid>
+        </Border>
+
+        <!-- Botones -->
+        <StackPanel Grid.Row="3" Orientation="Horizontal"
+                    HorizontalAlignment="Right" Margin="0,16,0,0">
+            <Button Content="Cancelar"
+                    Command="{Binding CancelCommand}"
+                    Width="100" Height="34" Margin="0,0,10,0"
+                    Background="#E0E0E0" Foreground="#333"
+                    BorderThickness="0" FontSize="13"/>
+            <Button Content="✔ Confirmar y generar recibo"
+                    Command="{Binding ConfirmCommand}"
+                    Height="34" Padding="16,0"
+                    Background="#0D6E6E" Foreground="White"
+                    BorderThickness="0" FontSize="13" FontWeight="SemiBold"/>
+        </StackPanel>
+    </Grid>
+</Window>
