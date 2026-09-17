@@ -4,9 +4,13 @@ using System.Windows.Data;
 using System.Windows.Input;
 using CONEX_APP.MainApplication.DTOs;
 using CONEX_APP.MainApplication.UseCases.Registrations;
+using CONEX_APP.MainApplication.UseCases.Renewals;
+using CONEX_APP.MainApplication.UseCases.Settings;
 using CONEX_APP.MainApplication.UseCases.Users;
 using CONEX_APP.Presentation.Commands;
 using CONEX_APP.Presentation.Helpers.Reports;
+using CONEX_APP.Presentation.ViewModels.Settings;
+using CONEX_APP.Presentation.Views.Settings;
 using CONEX_APP.Presentation.Views.Users;
 
 namespace CONEX_APP.Presentation.ViewModels.Users;
@@ -14,16 +18,14 @@ namespace CONEX_APP.Presentation.ViewModels.Users;
 public class UserListViewModel : ViewModelBase
 {
     private readonly GetUsersUseCase _getUsersUseCase;
-
     private readonly CreateUserUseCase _createUserUseCase;
-
     private readonly UpdateUserUseCase _updateUserUseCase;
-
     private readonly DeleteUserUseCase _deleteUserUseCase;
-
     private readonly GetActivityUseCase _getActivityUseCase;
-
     private readonly RemoveUserFromActivityUseCase _removeUserFromActivityUseCase;
+    private readonly RegisterRenewalUseCase _registerRenewalUseCase;
+    private readonly GetAppSettingsUseCase _getAppSettingsUseCase;
+    private readonly SaveAppSettingsUseCase _saveAppSettingsUseCase;
 
     public ObservableCollection<UserDto> Users { get; set; }
 
@@ -56,8 +58,21 @@ public class UserListViewModel : ViewModelBase
     public ICommand PrintRegistrationFormCommand { get; }
     public ICommand PrintRenewalReceiptCommand { get; }
     public ICommand ClearSearchCommand { get; }
+    public ICommand RenewUserCommand { get; }
+    public ICommand OpenSettingsCommand { get; }
 
-    public UserListViewModel(GetUsersUseCase getUsersUseCase, CreateUserUseCase createUserUseCase, UpdateUserUseCase updateUserUseCase, DeleteUserUseCase deleteUserUseCase, GetActivityUseCase getActivityUseCase, RemoveUserFromActivityUseCase removeUserFromActivityUseCase, Action goBack, Action goToActivities)
+    public UserListViewModel(
+        GetUsersUseCase getUsersUseCase,
+        CreateUserUseCase createUserUseCase,
+        UpdateUserUseCase updateUserUseCase,
+        DeleteUserUseCase deleteUserUseCase,
+        GetActivityUseCase getActivityUseCase,
+        RemoveUserFromActivityUseCase removeUserFromActivityUseCase,
+        RegisterRenewalUseCase registerRenewalUseCase,
+        GetAppSettingsUseCase getAppSettingsUseCase,
+        SaveAppSettingsUseCase saveAppSettingsUseCase,
+        Action goBack,
+        Action goToActivities)
     {
         _getUsersUseCase = getUsersUseCase;
         _createUserUseCase = createUserUseCase;
@@ -65,6 +80,10 @@ public class UserListViewModel : ViewModelBase
         _deleteUserUseCase = deleteUserUseCase;
         _getActivityUseCase = getActivityUseCase;
         _removeUserFromActivityUseCase = removeUserFromActivityUseCase;
+        _registerRenewalUseCase = registerRenewalUseCase;
+        _getAppSettingsUseCase = getAppSettingsUseCase;
+        _saveAppSettingsUseCase = saveAppSettingsUseCase;
+
         Users = new ObservableCollection<UserDto>();
         UsersView = CollectionViewSource.GetDefaultView(Users);
         UsersView.Filter = FilterUser;
@@ -78,6 +97,8 @@ public class UserListViewModel : ViewModelBase
         PrintRegistrationFormCommand = new RelayCommand(_ => PrintRegistrationForm(), _ => SelectedUser != null);
         PrintRenewalReceiptCommand = new RelayCommand(_ => PrintRenewalReceipt(), _ => SelectedUser != null);
         ClearSearchCommand = new RelayCommand(_ => SearchText = string.Empty);
+        RenewUserCommand = new RelayCommand(async _ => await RenewUserAsync(), _ => SelectedUser != null);
+        OpenSettingsCommand = new RelayCommand(_ => OpenSettings());
 
         _ = LoadUsersAsync();
     }
@@ -163,6 +184,44 @@ public class UserListViewModel : ViewModelBase
                 await LoadUsersAsync();
             }
         }
+    }
+
+    private async Task RenewUserAsync()
+    {
+        if (SelectedUser == null) return;
+
+        System.Windows.MessageBoxResult result = System.Windows.MessageBox.Show(
+            $"¿Confirmar renovación para {SelectedUser.Name} {SelectedUser.Surname}?\n\nFecha: {DateTime.Today:dd/MM/yyyy}",
+            "Confirmar Renovación",
+            System.Windows.MessageBoxButton.YesNo,
+            System.Windows.MessageBoxImage.Question);
+
+        if (result == System.Windows.MessageBoxResult.Yes)
+        {
+            try
+            {
+                await _registerRenewalUseCase.ExecuteAsync(SelectedUser.Id);
+                await LoadUsersAsync();
+                System.Windows.MessageBox.Show(
+                    $"✔ Renovación registrada correctamente para {SelectedUser.Name} {SelectedUser.Surname}.",
+                    "Renovación Registrada",
+                    System.Windows.MessageBoxButton.OK,
+                    System.Windows.MessageBoxImage.Information);
+            }
+            catch (Exception ex)
+            {
+                System.Windows.MessageBox.Show($"Error al registrar la renovación: {ex.Message}");
+            }
+        }
+    }
+
+    private void OpenSettings()
+    {
+        SettingsWindow settingsWindow = SettingsWindow.Create(_getAppSettingsUseCase, _saveAppSettingsUseCase);
+        settingsWindow.ShowDialog();
+
+        // Recargamos los usuarios para que el estado de renovación refleje el nuevo período
+        _ = LoadUsersAsync();
     }
 
     private void PrintBadge()

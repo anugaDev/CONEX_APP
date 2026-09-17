@@ -24,6 +24,10 @@ public class AppDbContext : DbContext
     
     public DbSet<Activity> Activities { get; set; }
 
+    public DbSet<Renewal> Renewals { get; set; }
+
+    public DbSet<AppSettings> AppSettings { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         optionsBuilder.UseSqlite($"Data Source={DatabaseFileName}");
@@ -40,5 +44,20 @@ public class AppDbContext : DbContext
                 "ActivityUser",
                 j => j.HasOne<Activity>().WithMany().HasForeignKey("ActivitiesId"),
                 j => j.HasOne<User>().WithMany().HasForeignKey("StudentsId"));
+
+        modelBuilder.Entity<Renewal>()
+            .HasOne(r => r.User)
+            .WithMany()
+            .HasForeignKey(r => r.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // Siempre debe existir exactamente un registro de configuración (Id = 1)
+        modelBuilder.Entity<AppSettings>().HasData(new AppSettings
+        {
+            Id = 1,
+            RenewalPeriodMonths = 12,
+            RenewalCost = 0,
+            ClassCost = 0
+        });
     }
 }

@@ -10,12 +10,14 @@ public class HomeViewModel : ViewModelBase
     public ICommand GoToClassesCommand { get; }
     public ICommand GoToReportsCommand { get; }
     public ICommand ExitCommand { get; }
+    public ICommand OpenSettingsCommand { get; }
 
-    public HomeViewModel(Action navigateToUsers, Action navigateToClasses, Action navigateToReports, Action exitAction)
+    public HomeViewModel(Action navigateToUsers, Action navigateToClasses, Action navigateToReports, Action exitAction, Action openSettings)
     {
         GoToUsersCommand = new RelayCommand(_ => navigateToUsers());
         GoToClassesCommand = new RelayCommand(_ => navigateToClasses());
         GoToReportsCommand = new RelayCommand(_ => navigateToReports());
         ExitCommand = new RelayCommand(_ => exitAction());
+        OpenSettingsCommand = new RelayCommand(_ => openSettings());
     }
 }

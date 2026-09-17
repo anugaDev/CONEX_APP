@@ -1,3 +1,5 @@
+using CONEX_APP.Domain.Enums;
+
 namespace CONEX_APP.MainApplication.DTOs;
 
 public class UserDto
@@ -31,4 +33,10 @@ public class UserDto
     public DateTime CreatedAt { get; set; }
 
     public DateTime DischargedAt { get; set; }
+
+    public DateTime? LastRenewalDate { get; set; }
+
+    public DateTime? NextRenewalDate { get; set; }
+
+    public RenewalStatus RenewalStatus { get; set; } = RenewalStatus.Active;
 }
