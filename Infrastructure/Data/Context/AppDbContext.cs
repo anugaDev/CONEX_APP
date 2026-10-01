@@ -28,6 +28,8 @@ public class AppDbContext : DbContext
 
     public DbSet<AppSettings> AppSettings { get; set; }
 
+    public DbSet<Waitlist> Waitlists { get; set; }
+
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
         optionsBuilder.UseSqlite($"Data Source={DatabaseFileName}");
@@ -51,7 +53,18 @@ public class AppDbContext : DbContext
             .HasForeignKey(r => r.UserId)
             .OnDelete(DeleteBehavior.Cascade);
 
-        // Siempre debe existir exactamente un registro de configuración (Id = 1)
+        modelBuilder.Entity<Waitlist>()
+            .HasOne(w => w.User)
+            .WithMany()
+            .HasForeignKey(w => w.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<Waitlist>()
+            .HasOne(w => w.Activity)
+            .WithMany()
+            .HasForeignKey(w => w.ActivityId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         modelBuilder.Entity<AppSettings>().HasData(new AppSettings
         {
             Id = 1,

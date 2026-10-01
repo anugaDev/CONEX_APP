@@ -70,6 +70,26 @@
                 <DataGridTextColumn Header="Aula" Binding="{Binding Classroom}" Width="100"/>
                 <DataGridTextColumn Header="Día y Hora" Binding="{Binding Date, StringFormat={}{0:dddd HH:mm}}" Width="150"/>
                 <DataGridTextColumn Header="Apuntados / Máx" Binding="{Binding Occupancy}" Width="130"/>
+                <DataGridTemplateColumn Header="En espera" Width="90">
+                    <DataGridTemplateColumn.CellTemplate>
+                        <DataTemplate>
+                            <TextBlock HorizontalAlignment="Center" FontWeight="Bold"
+                                       Text="{Binding WaitlistCount, StringFormat='⏳ {0}'}"
+                                       Foreground="#B8860B">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding WaitlistCount}" Value="0">
+                                                <Setter Property="Text" Value="—"/>
+                                                <Setter Property="Foreground" Value="LightGray"/>
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                        </DataTemplate>
+                    </DataGridTemplateColumn.CellTemplate>
+                </DataGridTemplateColumn>
             </DataGrid.Columns>
         </DataGrid>
     </Grid>

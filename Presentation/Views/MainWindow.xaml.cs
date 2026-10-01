@@ -5,6 +5,7 @@ using CONEX_APP.MainApplication.UseCases.Users;
 using CONEX_APP.MainApplication.UseCases.Registrations;
 using CONEX_APP.MainApplication.UseCases.Renewals;
 using CONEX_APP.MainApplication.UseCases.Settings;
+using CONEX_APP.MainApplication.UseCases.Waitlists;
 using CONEX_APP.Presentation.ViewModels;
 using CONEX_APP.Presentation.ViewModels.Classes;
 using CONEX_APP.Presentation.ViewModels.Reports;
@@ -34,6 +35,10 @@ public partial class MainWindow : Window
     private readonly RegisterRenewalUseCase _registerRenewalUseCase;
     private readonly GetAppSettingsUseCase _getAppSettingsUseCase;
     private readonly SaveAppSettingsUseCase _saveAppSettingsUseCase;
+    private readonly WaitlistRepository _waitlistRepository;
+    private readonly AddToWaitlistUseCase _addToWaitlistUseCase;
+    private readonly GetWaitlistUseCase _getWaitlistUseCase;
+    private readonly RemoveFromWaitlistUseCase _removeFromWaitlistUseCase;
 
     public MainWindow()
     {
@@ -92,7 +97,24 @@ public partial class MainWindow : Window
         _removeUserFromActivityUseCase = new RemoveUserFromActivityUseCase(_userRepository);
 
         ActivityRepository activityRepository = new ActivityRepository(_dbContext);
-        _getActivityUseCase = new GetActivityUseCase(activityRepository);
+
+        Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.ExecuteSqlRaw(_dbContext.Database, @"
+            CREATE TABLE IF NOT EXISTS Waitlists (
+                Id         INTEGER PRIMARY KEY AUTOINCREMENT,
+                UserId     INTEGER NOT NULL,
+                ActivityId INTEGER NOT NULL,
+                JoinedAt   TEXT    NOT NULL,
+                FOREIGN KEY (UserId)     REFERENCES Users(Id)      ON DELETE CASCADE,
+                FOREIGN KEY (ActivityId) REFERENCES Activities(Id)  ON DELETE CASCADE
+            );
+        ");
+
+        _waitlistRepository = new WaitlistRepository(_dbContext);
+        _addToWaitlistUseCase = new AddToWaitlistUseCase(_waitlistRepository);
+        _getWaitlistUseCase = new GetWaitlistUseCase(_waitlistRepository);
+        _removeFromWaitlistUseCase = new RemoveFromWaitlistUseCase(_waitlistRepository);
+
+        _getActivityUseCase = new GetActivityUseCase(activityRepository, _waitlistRepository);
         _createActivityUseCase = new CreateActivityUseCase(activityRepository);
         _updateActivityUseCase = new UpdateActivityUseCase(activityRepository);
         _deleteActivityUseCase = new DeleteActivityUseCase(activityRepository);
@@ -156,6 +178,9 @@ public partial class MainWindow : Window
             _deleteActivityUseCase,
             _getUsersUseCase,
             _removeUserFromActivityUseCase,
+            _addToWaitlistUseCase,
+            _getWaitlistUseCase,
+            _removeFromWaitlistUseCase,
             goBack: NavigateToHome,
             goToUsers: NavigateToUsers
         );

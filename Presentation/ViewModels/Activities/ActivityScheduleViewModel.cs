@@ -8,6 +8,7 @@ using CONEX_APP.Application.DTOs;
 using CONEX_APP.MainApplication.UseCases.Activities;
 using CONEX_APP.MainApplication.UseCases.Registrations;
 using CONEX_APP.MainApplication.UseCases.Users;
+using CONEX_APP.MainApplication.UseCases.Waitlists;
 using CONEX_APP.Presentation.Commands;
 using CONEX_APP.Presentation.Helpers;
 using AddActivityWindow = CONEX_APP.Presentation.Views.Activities.AddActivityWindow;
@@ -22,6 +23,9 @@ public class ActivityScheduleViewModel : ViewModelBase
     private readonly GetActivityUseCase _getActivitiesUseCase;
     private readonly GetUsersUseCase _getUsersUseCase;
     private readonly RemoveUserFromActivityUseCase _removeUserFromActivityUseCase;
+    private readonly AddToWaitlistUseCase _addToWaitlistUseCase;
+    private readonly GetWaitlistUseCase _getWaitlistUseCase;
+    private readonly RemoveFromWaitlistUseCase _removeFromWaitlistUseCase;
 
     public ObservableCollection<ActivityScheduleDto> ActivitySchedule { get; set; }
 
@@ -60,6 +64,9 @@ public class ActivityScheduleViewModel : ViewModelBase
         DeleteActivityUseCase deleteActivityUseCase,
         GetUsersUseCase getUsersUseCase,
         RemoveUserFromActivityUseCase removeUserFromActivityUseCase,
+        AddToWaitlistUseCase addToWaitlistUseCase,
+        GetWaitlistUseCase getWaitlistUseCase,
+        RemoveFromWaitlistUseCase removeFromWaitlistUseCase,
         Action goBack,
         Action goToUsers)
     {
@@ -69,6 +76,9 @@ public class ActivityScheduleViewModel : ViewModelBase
         _deleteActivityUseCase = deleteActivityUseCase;
         _getUsersUseCase = getUsersUseCase;
         _removeUserFromActivityUseCase = removeUserFromActivityUseCase;
+        _addToWaitlistUseCase = addToWaitlistUseCase;
+        _getWaitlistUseCase = getWaitlistUseCase;
+        _removeFromWaitlistUseCase = removeFromWaitlistUseCase;
         ActivitySchedule = new ObservableCollection<ActivityScheduleDto>();
         ActivityScheduleView = CollectionViewSource.GetDefaultView(ActivitySchedule);
         ActivityScheduleView.Filter = FilterActivity;
@@ -88,7 +98,8 @@ public class ActivityScheduleViewModel : ViewModelBase
     {
         AddActivityViewModel vm = new AddActivityViewModel(
             _createActivityUseCase, _updateActivityUseCase,
-            _getUsersUseCase, _removeUserFromActivityUseCase);
+            _getUsersUseCase, _removeUserFromActivityUseCase,
+            _addToWaitlistUseCase, _getWaitlistUseCase, _removeFromWaitlistUseCase);
         AddActivityWindow win = new AddActivityWindow(vm);
         win.ShowDialog();
 
@@ -103,6 +114,7 @@ public class ActivityScheduleViewModel : ViewModelBase
         AddActivityViewModel vm = new AddActivityViewModel(
             _createActivityUseCase, _updateActivityUseCase,
             _getUsersUseCase, _removeUserFromActivityUseCase,
+            _addToWaitlistUseCase, _getWaitlistUseCase, _removeFromWaitlistUseCase,
             SelectedActivity);
         AddActivityWindow win = new AddActivityWindow(vm);
         win.ShowDialog();

@@ -22,7 +22,11 @@ public class ActivityScheduleDto
     
     public int EnrolledStudentsCount { get; set; }
     
+    public int WaitlistCount { get; set; }
+
     public string Occupancy => $"{EnrolledStudentsCount} / {MaxStudents}";
+
+    public bool IsFull => EnrolledStudentsCount >= MaxStudents;
     
     public List<EnrolledStudentDto> EnrolledStudents { get; set; } = new();
 
