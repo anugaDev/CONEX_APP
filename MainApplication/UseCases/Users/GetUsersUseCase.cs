@@ -39,7 +39,9 @@ public class GetUsersUseCase
             // Protección: si CreatedAt es MinValue (dato antiguo sin registrar), usamos hoy.
             DateTime baseDate = lastRenewal?.RenewalDate
                 ?? (u.CreatedAt > DateTime.MinValue ? u.CreatedAt.Date : DateTime.Today);
-            DateTime nextRenewal = baseDate.AddMonths(settings.RenewalPeriodMonths);
+            // Si la renovación tiene fecha de vencimiento guardada (p.ej. "Venciment" importado de Conex), se respeta.
+            DateTime nextRenewal = lastRenewal?.NextRenewalDate?.Date
+                ?? baseDate.AddMonths(settings.RenewalPeriodMonths);
 
             RenewalStatus status = today > nextRenewal
                 ? RenewalStatus.Expired

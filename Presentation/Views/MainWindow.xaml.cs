@@ -63,9 +63,22 @@ public partial class MainWindow : Window
                 Id       INTEGER PRIMARY KEY AUTOINCREMENT,
                 UserId   INTEGER NOT NULL,
                 RenewalDate TEXT NOT NULL,
+                NextRenewalDate TEXT NULL,
                 FOREIGN KEY (UserId) REFERENCES Users(Id) ON DELETE CASCADE
             );
         ");
+
+        // BD antiguas: añadir la columna NextRenewalDate si todavía no existe
+        bool hasNextRenewalDate = Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions
+            .SqlQueryRaw<int>(_dbContext.Database,
+                "SELECT COUNT(*) AS Value FROM pragma_table_info('Renewals') WHERE name = 'NextRenewalDate'")
+            .AsEnumerable()
+            .First() > 0;
+        if (!hasNextRenewalDate)
+        {
+            Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.ExecuteSqlRaw(_dbContext.Database,
+                "ALTER TABLE Renewals ADD COLUMN NextRenewalDate TEXT NULL;");
+        }
 
         Microsoft.EntityFrameworkCore.RelationalDatabaseFacadeExtensions.ExecuteSqlRaw(_dbContext.Database, @"
             CREATE TABLE IF NOT EXISTS AppSettings (
@@ -86,7 +99,7 @@ public partial class MainWindow : Window
         _renewalRepository = new RenewalRepository(_dbContext);
         _appSettingsRepository = new AppSettingsRepository(_dbContext);
 
-        _registerRenewalUseCase = new RegisterRenewalUseCase(_renewalRepository);
+        _registerRenewalUseCase = new RegisterRenewalUseCase(_renewalRepository, _appSettingsRepository);
         _getAppSettingsUseCase = new GetAppSettingsUseCase(_appSettingsRepository);
         _saveAppSettingsUseCase = new SaveAppSettingsUseCase(_appSettingsRepository);
 

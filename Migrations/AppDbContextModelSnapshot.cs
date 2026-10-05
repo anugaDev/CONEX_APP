@@ -92,6 +92,9 @@ namespace CONEX_APP.Migrations
                         .ValueGeneratedOnAdd()
                         .HasColumnType("INTEGER");
 
+                    b.Property<DateTime?>("NextRenewalDate")
+                        .HasColumnType("TEXT");
+
                     b.Property<DateTime>("RenewalDate")
                         .HasColumnType("TEXT");
 
