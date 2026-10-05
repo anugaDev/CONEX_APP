@@ -90,7 +90,8 @@
             </Grid>
         </Grid>
 
-        <DataGrid Grid.Row="3" ItemsSource="{Binding UsersView}" SelectedItem="{Binding SelectedUser, Mode=TwoWay}" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Single">
+        <DataGrid Grid.Row="3" ItemsSource="{Binding UsersView}" SelectedItem="{Binding SelectedUser, Mode=TwoWay}" AutoGenerateColumns="False" IsReadOnly="True" SelectionMode="Extended"
+                  SelectionChanged="UsersDataGrid_SelectionChanged">
             <DataGrid.InputBindings>
                 <MouseBinding MouseAction="LeftDoubleClick" Command="{Binding EditUserCommand}" />
             </DataGrid.InputBindings>
