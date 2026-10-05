@@ -4,6 +4,19 @@ obj/
 riderModule.iml
 /_ReSharper.Caches/
 conex_app_test.db
+
+# Bases de datos locales (no subir al repositorio)
+*.db
+*.db-shm
+*.db-wal
+*.db-journal
+*.db.bak*
+*.sqlite
+*.sqlite3
+*.mdb
+*.accdb
+*.ldb
+*.laccdb
 README.md
 tools/check_access.ps1
 tools/check_alferez.ps1
