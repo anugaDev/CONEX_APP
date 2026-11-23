@@ -99,6 +99,7 @@
             <!-- Estilo de fila: solo resalta la selección (el color de renovación va en la celda de Próxima Renovación) -->
             <DataGrid.RowStyle>
                 <Style TargetType="DataGridRow">
+                    <EventSetter Event="PreviewMouseLeftButtonDown" Handler="UserRow_PreviewMouseLeftButtonDown"/>
                     <Style.Triggers>
                         <Trigger Property="IsSelected" Value="True">
                             <Setter Property="Background" Value="#CCE5FF"/>
