@@ -96,10 +96,9 @@
                 <MouseBinding MouseAction="LeftDoubleClick" Command="{Binding EditUserCommand}" />
             </DataGrid.InputBindings>
 
-            <!-- Estilo de fila: colorea el fondo según RenewalStatus usando el converter -->
+            <!-- Estilo de fila: solo resalta la selección (el color de renovación va en la celda de Próxima Renovación) -->
             <DataGrid.RowStyle>
                 <Style TargetType="DataGridRow">
-                    <Setter Property="Background" Value="{Binding RenewalStatus, Converter={StaticResource RenewalStatusToBackground}}"/>
                     <Style.Triggers>
                         <Trigger Property="IsSelected" Value="True">
                             <Setter Property="Background" Value="#CCE5FF"/>
@@ -110,21 +109,29 @@
             </DataGrid.RowStyle>
 
             <DataGrid.Columns>
-                <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="40"/>
-                <DataGridTextColumn Header="Nombre" Binding="{Binding Name}" Width="100"/>
-                <DataGridTextColumn Header="Primer Apellido" Binding="{Binding Surname}" Width="120"/>
-                <DataGridTextColumn Header="Segundo Apellido" Binding="{Binding SecondSurname}" Width="120"/>
-                <DataGridTextColumn Header="DNI" Binding="{Binding IdCard}" Width="90"/>
-                <DataGridTextColumn Header="Teléfono" Binding="{Binding Phone}" Width="95"/>
-                <DataGridTextColumn Header="Correo Electrónico" Binding="{Binding Email}" Width="150"/>
-                <DataGridCheckBoxColumn Header="Socio" Binding="{Binding IsPartner}" Width="50"/>
-                <DataGridCheckBoxColumn Header="Tutor" Binding="{Binding IsTutor}" Width="50"/>
+                <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="40" MinWidth="40"/>
+                <DataGridTextColumn Header="Nombre" Binding="{Binding Name}" Width="100*" MinWidth="100"/>
+                <DataGridTextColumn Header="Primer Apellido" Binding="{Binding Surname}" Width="120*" MinWidth="120"/>
+                <DataGridTextColumn Header="Segundo Apellido" Binding="{Binding SecondSurname}" Width="120*" MinWidth="120"/>
+                <DataGridTextColumn Header="DNI" Binding="{Binding IdCard}" Width="90*" MinWidth="90"/>
+                <DataGridTextColumn Header="Teléfono" Binding="{Binding Phone}" Width="95*" MinWidth="95"/>
+                <DataGridTextColumn Header="Correo Electrónico" Binding="{Binding Email}" Width="180*" MinWidth="150"/>
+                <DataGridCheckBoxColumn Header="Socio" Binding="{Binding IsPartner}" Width="50*" MinWidth="50"/>
+                <DataGridCheckBoxColumn Header="Tutor" Binding="{Binding IsTutor}" Width="50*" MinWidth="50"/>
                 <DataGridTextColumn Header="Última Renovación"
                                     Binding="{Binding LastRenewalDate, StringFormat=dd/MM/yyyy, TargetNullValue='Sin renovaciones'}"
-                                    Width="130"/>
+                                    Width="130*" MinWidth="130"/>
                 <DataGridTextColumn Header="Próxima Renovación"
                                     Binding="{Binding NextRenewalDate, StringFormat=dd/MM/yyyy}"
-                                    Width="130"/>
+                                    Width="130*" MinWidth="130">
+                    <!-- Colorea solo esta celda según RenewalStatus usando el converter -->
+                    <DataGridTextColumn.CellStyle>
+                        <Style TargetType="DataGridCell" BasedOn="{StaticResource {x:Type DataGridCell}}">
+                            <Setter Property="Background" Value="{Binding RenewalStatus, Converter={StaticResource RenewalStatusToBackground}}"/>
+                            <Setter Property="FontWeight" Value="SemiBold"/>
+                        </Style>
+                    </DataGridTextColumn.CellStyle>
+                </DataGridTextColumn>
             </DataGrid.Columns>
         </DataGrid>
     </Grid>
