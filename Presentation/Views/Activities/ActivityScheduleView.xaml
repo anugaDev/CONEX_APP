@@ -63,6 +63,11 @@
             <DataGrid.InputBindings>
                 <MouseBinding MouseAction="LeftDoubleClick" Command="{Binding EditActivityCommand}" />
             </DataGrid.InputBindings>
+            <DataGrid.RowStyle>
+                <Style TargetType="DataGridRow" BasedOn="{StaticResource {x:Type DataGridRow}}">
+                    <EventSetter Event="PreviewMouseLeftButtonDown" Handler="ActivityRow_PreviewMouseLeftButtonDown"/>
+                </Style>
+            </DataGrid.RowStyle>
             <DataGrid.Columns>
                 <DataGridTextColumn Header="ID" Binding="{Binding Id}" Width="40"/>
                 <DataGridTextColumn Header="Nombre de Actividad" Binding="{Binding Name}" Width="*"/>
