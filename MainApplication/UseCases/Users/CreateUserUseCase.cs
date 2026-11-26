@@ -2,24 +2,29 @@ using CONEX_APP.Domain.Entities;
 using CONEX_APP.Domain.Exceptions;
 using CONEX_APP.Domain.Interfaces;
 using CONEX_APP.MainApplication.DTOs;
+using CONEX_APP.MainApplication.UseCases.Registrations;
 
 namespace CONEX_APP.MainApplication.UseCases.Users;
 
 public class CreateUserUseCase
 {
     private readonly IUserRepository _userRepository;
+    private readonly IActivityRepository _activityRepository;
 
-    public CreateUserUseCase(IUserRepository userRepository)
+    public CreateUserUseCase(IUserRepository userRepository, IActivityRepository activityRepository)
     {
         _userRepository = userRepository;
+        _activityRepository = activityRepository;
     }
 
-    public async Task ExecuteAsync(CreateUserDto dto)
+    public async Task<int> ExecuteAsync(CreateUserDto dto)
     {
         bool exists = await _userRepository.ExistsAsync(dto.IdCard, dto.Name, dto.Surname, dto.SecondSurname);
         if (exists)
             throw new DuplicateEntityException(
                 $"Ya existe un usuario con el mismo DNI o nombre completo: {dto.Name} {dto.Surname} {dto.SecondSurname}".Trim());
+
+        await EnrollmentRules.EnsureCapacityAsync(_activityRepository, dto.SelectedActivityIds);
 
         User user = new User
         {
@@ -37,6 +42,6 @@ public class CreateUserUseCase
             DischargedAt = DateTime.MinValue
         };
 
-        await _userRepository.AddAsync(user, dto.SelectedActivityIds);
+        return await _userRepository.AddAsync(user, dto.SelectedActivityIds);
     }
 }

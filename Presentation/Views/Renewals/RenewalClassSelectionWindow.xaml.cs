@@ -1,5 +1,5 @@
 using System.Windows;
-using CONEX_APP.Application.DTOs;
+using CONEX_APP.MainApplication.DTOs;
 using CONEX_APP.Presentation.ViewModels.Renewals;
 
 namespace CONEX_APP.Presentation.Views.Renewals;

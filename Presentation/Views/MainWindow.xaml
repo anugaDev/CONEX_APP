@@ -5,10 +5,8 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:viewmodels="clr-namespace:CONEX_APP.Presentation.ViewModels"
         xmlns:viewmodels_users="clr-namespace:CONEX_APP.Presentation.ViewModels.Users"
-        xmlns:viewmodels_classes="clr-namespace:CONEX_APP.Presentation.ViewModels.Classes"
         xmlns:views="clr-namespace:CONEX_APP.Presentation.Views"
         xmlns:views_users="clr-namespace:CONEX_APP.Presentation.Views.Users"
-        xmlns:views_classes="clr-namespace:CONEX_APP.Presentation.Views.Classes"
         xmlns:viewmodels_activities="clr-namespace:CONEX_APP.Presentation.ViewModels.Activities"
         xmlns:views_activities="clr-namespace:CONEX_APP.Presentation.Views.Activities"
         xmlns:viewmodels_reports="clr-namespace:CONEX_APP.Presentation.ViewModels.Reports"
@@ -23,9 +21,6 @@
         </DataTemplate>
         <DataTemplate DataType="{x:Type viewmodels_users:UserListViewModel}">
             <views_users:UserListView />
-        </DataTemplate>
-        <DataTemplate DataType="{x:Type viewmodels_classes:ClassListViewModel}">
-            <views_classes:ClassListView />
         </DataTemplate>
         <DataTemplate DataType="{x:Type viewmodels_activities:ActivityScheduleViewModel}">
             <views_activities:ActivityScheduleView />

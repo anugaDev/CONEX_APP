@@ -5,8 +5,20 @@ namespace CONEX_APP.Domain.Interfaces;
 public interface IActivityRepository
 {
     Task<IEnumerable<Activity>> GetAllAsync();
+
+    Task<Activity?> GetByIdAsync(int id);
+
+    Task<IEnumerable<Activity>> GetByIdsAsync(IEnumerable<int> ids);
+
     Task AddAsync(Activity activity);
+
     Task UpdateAsync(Activity activity);
+
     Task DeleteAsync(int id);
+
     Task<bool> ExistsAsync(string name, int? excludeId = null);
+
+    Task EnrollAsync(int userId, int activityId);
+
+    Task UnenrollAsync(int userId, int activityId);
 }

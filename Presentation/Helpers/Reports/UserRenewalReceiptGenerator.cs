@@ -1,4 +1,4 @@
-using CONEX_APP.Application.DTOs;
+using System.Globalization;
 using CONEX_APP.MainApplication.DTOs;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
@@ -16,15 +16,11 @@ public class UserRenewalReceiptGenerator : UserDocumentBase
 
     private const string SectionConcept = "CONCEPTO";
 
-    private const string SectionClasses = "CLASES INCLUIDAS";
-
-    private const string ReceiptNumberPrefix = "REC";
-
-    private const string ConceptDescription = "Cuota anual de renovación de socio";
-
     private const string TableHeaderDesc = "Descripción";
 
-    private const string TableHeaderPeriod = "Periodo";
+    private const string TableHeaderAmount = "Importe";
+
+    private const string TotalLabel = "TOTAL";
 
     private const string MemberTypeSocioTutor = "Socio / Tutor";
 
@@ -36,22 +32,21 @@ public class UserRenewalReceiptGenerator : UserDocumentBase
 
     private const int ReceiptSignatureGap = 30;
 
-    /// <param name="user">Datos del usuario.</param>
-    /// <param name="selectedActivities">Clases seleccionadas para incluir en el recibo. Puede ser null o vacío.</param>
-    public string GenerateReceipt(UserDto user, IEnumerable<ActivityScheduleDto>? selectedActivities = null)
+    private static readonly CultureInfo SpanishCulture = CultureInfo.GetCultureInfo("es-ES");
+
+    public string GenerateReceipt(UserDto user, RenewalReceiptDto receipt)
     {
-        DateTime renewalDate = DateTime.Now;
         string filePath = BuildFilePath(FilePrefix, user.Id);
         byte[] logoBytes = LoadLogoBytes();
-        List<ActivityScheduleDto> classes = selectedActivities?.ToList() ?? [];
+        DateTime generatedAt = DateTime.Now;
 
         Document.Create(container => container.Page(page =>
         {
             ConfigurePage(page);
             page.Header().PaddingBottom(8).Column(col => RenderHeader(col, logoBytes));
-            page.Content().Column(col => RenderContent(col, user, renewalDate, classes));
+            page.Content().Column(col => RenderContent(col, user, receipt));
             page.Footer().AlignCenter()
-                .Text(BuildFooterText(renewalDate))
+                .Text(BuildFooterText(generatedAt))
                 .FontSize(FontSizeXs).FontColor(ColorTextSubtle);
         })).GeneratePdf(filePath);
 
@@ -89,33 +84,31 @@ public class UserRenewalReceiptGenerator : UserDocumentBase
             .FontSize(FontSizeBase).FontColor(ColorTextMuted);
     }
 
-    private void RenderContent(ColumnDescriptor col, UserDto user, DateTime renewalDate, List<ActivityScheduleDto> classes)
+    private void RenderContent(ColumnDescriptor col, UserDto user, RenewalReceiptDto receipt)
     {
-        RenderReceiptMetaRow(col, user, renewalDate);
+        RenderReceiptMetaRow(col, receipt);
         col.Item().PaddingTop(SectionGapTopPt).LineHorizontal(ThinLineWeight).LineColor(ColorBorder);
         RenderMemberDataSection(col, user);
-        RenderConceptSection(col, renewalDate);
-        if (classes.Count > 0)
-            RenderClassesSection(col, classes);
+        RenderConceptSection(col, receipt);
         RenderSignatureRow(col, "Firma del interesado/a", "Sello y firma de la asociación", ReceiptSignatureGap);
     }
 
-    private void RenderReceiptMetaRow(ColumnDescriptor col, UserDto user, DateTime renewalDate)
+    private void RenderReceiptMetaRow(ColumnDescriptor col, RenewalReceiptDto receipt)
     {
         col.Item().PaddingTop(10).Row(row =>
         {
             row.RelativeItem().Column(c =>
-                RenderLabeledField(c, "Nº de recibo", BuildReceiptNumber(user.Id, renewalDate)));
+                RenderLabeledField(c, "Nº de recibo", receipt.ReceiptNumber));
 
             row.ConstantItem(FieldGutterPt);
 
             row.RelativeItem().Column(c =>
-                RenderColoredDateField(c, "Fecha de renovación", renewalDate.ToString("dd/MM/yyyy"), ColorPrimaryLight));
+                RenderColoredDateField(c, "Fecha de renovación", receipt.RenewalDate.ToString("dd/MM/yyyy"), ColorPrimaryLight));
 
             row.ConstantItem(FieldGutterPt);
 
             row.RelativeItem().Column(c =>
-                RenderColoredDateField(c, "Válido hasta", renewalDate.AddYears(1).ToString("dd/MM/yyyy"), ColorSuccess));
+                RenderColoredDateField(c, "Válido hasta", receipt.ValidUntil.ToString("dd/MM/yyyy"), ColorSuccess));
         });
     }
 
@@ -141,7 +134,7 @@ public class UserRenewalReceiptGenerator : UserDocumentBase
     {
         col.Item().Row(row =>
         {
-            row.RelativeItem(2).Column(c => RenderLabeledField(c, "Nombre completo", BuildFullName(user)));
+            row.RelativeItem(2).Column(c => RenderLabeledField(c, "Nombre completo", user.FullName));
             row.ConstantItem(FieldGutterPt);
             row.RelativeItem(1).Column(c => RenderLabeledField(c, "Nº de socio", user.Id.ToString()));
             row.ConstantItem(FieldGutterPt);
@@ -158,17 +151,17 @@ public class UserRenewalReceiptGenerator : UserDocumentBase
         });
     }
 
-    private void RenderConceptSection(ColumnDescriptor col, DateTime renewalDate)
+    private void RenderConceptSection(ColumnDescriptor col, RenewalReceiptDto receipt)
     {
         col.Item().PaddingTop(SectionGapTopPt).PaddingBottom(4)
             .Element(c => RenderSectionTitle(c, SectionConcept));
 
         col.Item()
-            .Border(ThinLineWeight).BorderColor(ColorBorder).Padding(10)
-            .Table(table => RenderConceptTable(table, renewalDate));
+            .Border(ThinLineWeight).BorderColor(ColorBorder)
+            .Table(table => RenderConceptTable(table, receipt));
     }
 
-    private void RenderConceptTable(TableDescriptor table, DateTime renewalDate)
+    private void RenderConceptTable(TableDescriptor table, RenewalReceiptDto receipt)
     {
         table.ColumnsDefinition(cols =>
         {
@@ -181,59 +174,57 @@ public class UserRenewalReceiptGenerator : UserDocumentBase
             header.Cell().Background(ColorPrimary).Padding(6)
                 .Text(TableHeaderDesc).FontSize(FontSizeMd).SemiBold().FontColor(Colors.White);
             header.Cell().Background(ColorPrimary).Padding(6).AlignRight()
-                .Text(TableHeaderPeriod).FontSize(FontSizeMd).SemiBold().FontColor(Colors.White);
+                .Text(TableHeaderAmount).FontSize(FontSizeMd).SemiBold().FontColor(Colors.White);
         });
 
-        table.Cell().BorderBottom(ThinLineWeight).BorderColor(ColorBorder).Padding(8)
-            .Text(ConceptDescription).FontSize(FontSizeBase);
-        table.Cell().BorderBottom(ThinLineWeight).BorderColor(ColorBorder).Padding(8).AlignRight()
-            .Text(BuildRenewalPeriod(renewalDate)).FontSize(FontSizeBase);
-    }
+        // Cuota de renovación
+        table.Cell().Element(ConceptCell).Column(c =>
+        {
+            c.Item().Text(BuildRenewalConcept(receipt)).FontSize(FontSizeBase);
+            c.Item().PaddingTop(2)
+                .Text($"Periodo: {receipt.RenewalDate:dd/MM/yyyy} – {receipt.ValidUntil:dd/MM/yyyy}")
+                .FontSize(FontSizeSm).FontColor(ColorTextMuted);
+        });
+        table.Cell().Element(ConceptCell).AlignRight()
+            .Text(FormatAmount(receipt.RenewalAmount)).FontSize(FontSizeBase);
 
-    private void RenderClassesSection(ColumnDescriptor col, List<ActivityScheduleDto> classes)
-    {
-        col.Item().PaddingTop(SectionGapTopPt).PaddingBottom(4)
-            .Element(c => RenderSectionTitle(c, SectionClasses));
-
-        col.Item()
-            .Border(ThinLineWeight).BorderColor(ColorBorder)
-            .Table(table =>
+        // Una línea por clase
+        foreach (ReceiptClassLineDto cls in receipt.Classes)
+        {
+            table.Cell().Element(ConceptCell).Column(c =>
             {
-                table.ColumnsDefinition(cols =>
-                {
-                    cols.RelativeColumn(3); // Clase
-                    cols.RelativeColumn(2); // Tutor
-                });
-
-                table.Header(header =>
-                {
-                    header.Cell().Background(ColorPrimary).Padding(6)
-                        .Text("Clase").FontSize(FontSizeMd).SemiBold().FontColor(Colors.White);
-                    header.Cell().Background(ColorPrimary).Padding(6)
-                        .Text("Tutor/a").FontSize(FontSizeMd).SemiBold().FontColor(Colors.White);
-                });
-
-                foreach (ActivityScheduleDto cls in classes)
-                {
-                    table.Cell().BorderBottom(ThinLineWeight).BorderColor(ColorBorder).Padding(7)
-                        .Text(cls.Name).FontSize(FontSizeBase);
-                    table.Cell().BorderBottom(ThinLineWeight).BorderColor(ColorBorder).Padding(7)
-                        .Text(cls.Tutor).FontSize(FontSizeBase).FontColor(ColorTextMuted);
-                }
+                c.Item().Text($"Clase: {cls.ActivityName}").FontSize(FontSizeBase);
+                string details = string.Join(" · ", new[] { cls.Schedule, cls.Tutor }.Where(s => !string.IsNullOrWhiteSpace(s)));
+                if (details.Length > 0)
+                    c.Item().PaddingTop(2).Text(details).FontSize(FontSizeSm).FontColor(ColorTextMuted);
             });
+            table.Cell().Element(ConceptCell).AlignRight()
+                .Text(FormatAmount(receipt.HasAmounts ? cls.Price : null)).FontSize(FontSizeBase);
+        }
+
+        // Total
+        table.Cell().Background(Colors.Grey.Lighten4).Padding(8)
+            .Text(TotalLabel).FontSize(FontSizeLg).SemiBold();
+        table.Cell().Background(Colors.Grey.Lighten4).Padding(8).AlignRight()
+            .Text(FormatAmount(receipt.Total)).FontSize(FontSizeLg).SemiBold().FontColor(ColorPrimary);
     }
 
-    private string BuildFooterText(DateTime renewalDate)
-        => $"Documento generado el {renewalDate:dd/MM/yyyy HH:mm}  |  {AssociationName}";
+    private IContainer ConceptCell(IContainer container) =>
+        container.BorderBottom(ThinLineWeight).BorderColor(ColorBorder).Padding(8);
 
-    private string BuildReceiptNumber(int userId, DateTime date)
-        => $"{ReceiptNumberPrefix}-{userId:D4}-{date:yyyyMMddHHmmss}";
+    private static string BuildRenewalConcept(RenewalReceiptDto receipt) => receipt.PeriodMonths switch
+    {
+        12 => "Cuota anual de renovación de socio",
+        1 => "Cuota mensual de renovación de socio",
+        > 0 => $"Cuota de renovación de socio ({receipt.PeriodMonths} meses)",
+        _ => "Cuota de renovación de socio"
+    };
 
-    private string BuildFullName(UserDto user)
-        => $"{user.Name} {user.Surname} {user.SecondSurname}".Trim();
+    private static string FormatAmount(decimal? amount) =>
+        amount.HasValue ? amount.Value.ToString("C2", SpanishCulture) : EmptyFieldPlaceholder;
 
-    private string BuildRenewalPeriod(DateTime date)
-        => $"{date:yyyy} – {date.AddYears(1):yyyy}";
+    private string BuildFooterText(DateTime generatedAt)
+        => $"Documento generado el {generatedAt:dd/MM/yyyy HH:mm}  |  {AssociationName}";
 
     private string BuildMemberType(UserDto user)
         => (user.IsPartner, user.IsTutor) switch

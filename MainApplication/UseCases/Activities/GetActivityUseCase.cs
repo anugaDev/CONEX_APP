@@ -1,8 +1,9 @@
-using CONEX_APP.Application.DTOs;
 using CONEX_APP.Domain.Entities;
 using CONEX_APP.Domain.Interfaces;
+using CONEX_APP.MainApplication.DTOs;
+using CONEX_APP.MainApplication.Mapping;
 
-namespace CONEX_APP.MainApplication.UseCases.Users;
+namespace CONEX_APP.MainApplication.UseCases.Activities;
 
 public class GetActivityUseCase
 {
@@ -18,32 +19,20 @@ public class GetActivityUseCase
     public async Task<IEnumerable<ActivityScheduleDto>> ExecuteAsync()
     {
         IEnumerable<Activity> activities = await _activityRepository.GetAllAsync();
+        Dictionary<int, int> waitlistCounts = await _waitlistRepository.GetCountsByActivityAsync();
 
-        List<ActivityScheduleDto> result = new();
+        return activities
+            .Select(a => ActivityMapper.ToDto(a, waitlistCounts.GetValueOrDefault(a.Id)))
+            .ToList();
+    }
 
-        foreach (Activity activity in activities)
-        {
-            IEnumerable<Waitlist> waitlist = await _waitlistRepository.GetByActivityAsync(activity.Id);
+    public async Task<ActivityScheduleDto?> ExecuteByIdAsync(int activityId)
+    {
+        Activity? activity = await _activityRepository.GetByIdAsync(activityId);
+        if (activity == null)
+            return null;
 
-            result.Add(new ActivityScheduleDto
-            {
-                Id = activity.Id,
-                Name = activity.Name,
-                Tutor = activity.Tutor,
-                Date = activity.Date,
-                Classroom = activity.Classroom,
-                MaxStudents = activity.MaxStudents,
-                EnrolledStudentsCount = activity.Students.Count,
-                WaitlistCount = waitlist.Count(),
-                EnrolledStudents = activity.Students.Select(s => new EnrolledStudentDto
-                {
-                    Id = s.Id,
-                    FullName = string.Join(" ", new[] { s.Name, s.Surname, s.SecondSurname }.Where(p => !string.IsNullOrWhiteSpace(p)))
-                }).ToList(),
-                EnrolledStudentNames = activity.Students.Select(s => $"{s.Name} {s.Surname}").ToList()
-            });
-        }
-
-        return result;
+        Dictionary<int, int> waitlistCounts = await _waitlistRepository.GetCountsByActivityAsync();
+        return ActivityMapper.ToDto(activity, waitlistCounts.GetValueOrDefault(activityId));
     }
 }

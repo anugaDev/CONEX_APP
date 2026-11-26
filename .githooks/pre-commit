@@ -1,0 +1,40 @@
+#!/bin/sh
+# Impide hacer commit de bases de datos o volcados con datos de los socios,
+# aunque se añadan con "git add -f".
+#
+# Se activa una vez por clon con:   git config core.hooksPath .githooks
+
+blocked=""
+
+while IFS= read -r file; do
+    [ -z "$file" ] && continue
+    reason=""
+
+    case "$file" in
+        *.db|*.db-wal|*.db-shm|*.db-journal|*.db.bak*|*.sqlite|*.sqlite3|*.mdb|*.accdb|*.ldb|*.laccdb)
+            reason="extensión de base de datos" ;;
+        tools/*.sql|tools/*.sql.*)
+            reason="volcado de datos generado desde Conex" ;;
+    esac
+
+    # También por contenido: cualquier fichero SQLite, se llame como se llame
+    if [ -z "$reason" ] && [ "$(git show ":$file" 2>/dev/null | head -c 15)" = "SQLite format 3" ]; then
+        reason="el contenido es una base de datos SQLite"
+    fi
+
+    if [ -n "$reason" ]; then
+        blocked="$blocked
+  - $file ($reason)"
+    fi
+done <<EOF
+$(git diff --cached --name-only --diff-filter=ACMR)
+EOF
+
+if [ -n "$blocked" ]; then
+    echo "ERROR: el commit incluye datos que no deben subirse al repositorio:$blocked" >&2
+    echo "" >&2
+    echo "Quítalos del commit con:  git restore --staged <fichero>" >&2
+    exit 1
+fi
+
+exit 0

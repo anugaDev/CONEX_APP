@@ -1,6 +1,6 @@
 using System.Collections.ObjectModel;
 using System.Windows.Input;
-using CONEX_APP.Application.DTOs;
+using CONEX_APP.MainApplication.DTOs;
 using CONEX_APP.Presentation.Commands;
 using CONEX_APP.Presentation.ViewModels;
 

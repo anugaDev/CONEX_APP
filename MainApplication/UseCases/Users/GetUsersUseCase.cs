@@ -7,6 +7,8 @@ namespace CONEX_APP.MainApplication.UseCases.Users;
 
 public class GetUsersUseCase
 {
+    private const int ExpiringSoonDays = 30;
+
     private readonly IUserRepository _userRepository;
     private readonly IRenewalRepository _renewalRepository;
     private readonly IAppSettingsRepository _appSettingsRepository;
@@ -24,16 +26,16 @@ public class GetUsersUseCase
         AppSettings settings = await _appSettingsRepository.GetAsync();
         IEnumerable<Renewal> allRenewals = await _renewalRepository.GetAllAsync();
 
-        // Indexamos la última renovación por usuario para evitar N+1 queries
-        Dictionary<int, Renewal?> lastRenewalByUser = users.ToDictionary(
-            u => u.Id,
-            u => allRenewals.Where(r => r.UserId == u.Id).MaxBy(r => r.RenewalDate));
+        // Última renovación por usuario, calculada en una sola pasada
+        Dictionary<int, Renewal> lastRenewalByUser = allRenewals
+            .GroupBy(r => r.UserId)
+            .ToDictionary(g => g.Key, g => g.MaxBy(r => r.RenewalDate)!);
 
         DateTime today = DateTime.Today;
 
         return users.Select(u =>
         {
-            Renewal? lastRenewal = lastRenewalByUser[u.Id];
+            Renewal? lastRenewal = lastRenewalByUser.GetValueOrDefault(u.Id);
 
             // Si nunca ha renovado, usamos CreatedAt como base.
             // Protección: si CreatedAt es MinValue (dato antiguo sin registrar), usamos hoy.
@@ -45,7 +47,7 @@ public class GetUsersUseCase
 
             RenewalStatus status = today > nextRenewal
                 ? RenewalStatus.Expired
-                : today >= nextRenewal.AddDays(-30)
+                : today >= nextRenewal.AddDays(-ExpiringSoonDays)
                     ? RenewalStatus.ExpiringSoon
                     : RenewalStatus.Active;
 
@@ -69,6 +71,6 @@ public class GetUsersUseCase
                 NextRenewalDate = nextRenewal,
                 RenewalStatus = status
             };
-        });
+        }).ToList();
     }
 }

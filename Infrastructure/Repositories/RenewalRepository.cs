@@ -7,31 +7,35 @@ namespace CONEX_APP.Infrastructure.Repositories;
 
 public class RenewalRepository : IRenewalRepository
 {
-    private readonly AppDbContext _context;
+    private readonly AppDbContextFactory _contextFactory;
 
-    public RenewalRepository(AppDbContext context)
+    public RenewalRepository(AppDbContextFactory contextFactory)
     {
-        _context = context;
+        _contextFactory = contextFactory;
     }
 
     public async Task<Renewal?> GetLastRenewalAsync(int userId)
     {
-        return await _context.Renewals
+        await using AppDbContext context = _contextFactory.Create();
+        return await context.Renewals.AsNoTracking()
+            .Include(r => r.Classes)
             .Where(r => r.UserId == userId)
-            .OrderByDescending(r => r.RenewalDate)
+            .OrderByDescending(r => r.RenewalDate).ThenByDescending(r => r.Id)
             .FirstOrDefaultAsync();
     }
 
     public async Task<IEnumerable<Renewal>> GetAllAsync()
     {
-        return await _context.Renewals
+        await using AppDbContext context = _contextFactory.Create();
+        return await context.Renewals.AsNoTracking()
             .OrderByDescending(r => r.RenewalDate)
             .ToListAsync();
     }
 
     public async Task AddAsync(Renewal renewal)
     {
-        _context.Renewals.Add(renewal);
-        await _context.SaveChangesAsync();
+        await using AppDbContext context = _contextFactory.Create();
+        context.Renewals.Add(renewal);
+        await context.SaveChangesAsync();
     }
 }

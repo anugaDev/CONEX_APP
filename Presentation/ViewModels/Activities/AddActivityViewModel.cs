@@ -1,38 +1,51 @@
 using System.Collections.ObjectModel;
+using System.Globalization;
 using System.Windows;
 using System.Windows.Input;
 using CONEX_APP.Domain.Exceptions;
 using CONEX_APP.MainApplication.DTOs;
-using CONEX_APP.Application.DTOs;
 using CONEX_APP.MainApplication.UseCases.Activities;
 using CONEX_APP.MainApplication.UseCases.Registrations;
 using CONEX_APP.MainApplication.UseCases.Users;
 using CONEX_APP.MainApplication.UseCases.Waitlists;
 using CONEX_APP.Presentation.Commands;
 using CONEX_APP.Presentation.Helpers;
+using CONEX_APP.Presentation.Services;
 
 namespace CONEX_APP.Presentation.ViewModels.Activities;
 
 public class AddActivityViewModel : ViewModelBase
 {
+    private static readonly CultureInfo SpanishCulture = CultureInfo.GetCultureInfo("es-ES");
+
     private readonly CreateActivityUseCase _createActivityUseCase;
     private readonly UpdateActivityUseCase _updateActivityUseCase;
+    private readonly GetActivityUseCase _getActivityUseCase;
     private readonly GetUsersUseCase _getUsersUseCase;
     private readonly RemoveUserFromActivityUseCase _removeUserFromActivityUseCase;
+    private readonly EnrollUserUseCase _enrollUserUseCase;
     private readonly AddToWaitlistUseCase _addToWaitlistUseCase;
     private readonly GetWaitlistUseCase _getWaitlistUseCase;
     private readonly RemoveFromWaitlistUseCase _removeFromWaitlistUseCase;
+    private readonly WaitlistPromotionService _waitlistPromotionService;
 
     private readonly int? _editingActivityId;
-    private int _currentEnrolledCount;
-    private int _maxStudents;
+
+    private ActivityScheduleDto? _savedActivity;
+
+    private List<UserDto> _allUsers = new();
 
     public Action? CloseAction { get; set; }
 
     public bool WasSaved { get; private set; }
 
+    public bool IsEditing => _editingActivityId.HasValue;
+
+    public string WindowTitle => IsEditing ? "Editar Actividad" : "Añadir Nueva Actividad";
+
     private string _name = string.Empty;
     private string _classRoom = string.Empty;
+    private int _maxStudents;
 
     public int MaxStudents
     {
@@ -82,6 +95,8 @@ public class AddActivityViewModel : ViewModelBase
         set => SetProperty(ref _classRoom, value);
     }
 
+    // --- Alumnos ---
+
     public ObservableCollection<EnrolledStudentDto> EnrolledStudents { get; } = new();
 
     private EnrolledStudentDto? _selectedEnrolledStudent;
@@ -90,6 +105,15 @@ public class AddActivityViewModel : ViewModelBase
         get => _selectedEnrolledStudent;
         set => SetProperty(ref _selectedEnrolledStudent, value);
     }
+
+    private string _occupancyText = string.Empty;
+    public string OccupancyText
+    {
+        get => _occupancyText;
+        private set => SetProperty(ref _occupancyText, value);
+    }
+
+    // --- Lista de espera ---
 
     public ObservableCollection<WaitlistEntryDto> WaitlistEntries { get; } = new();
 
@@ -100,71 +124,79 @@ public class AddActivityViewModel : ViewModelBase
         set => SetProperty(ref _selectedWaitlistEntry, value);
     }
 
-    private bool _hasWaitlistEntries;
-    public bool HasWaitlistEntries
+    public ObservableCollection<UserDto> WaitlistCandidates { get; } = new();
+
+    private UserDto? _selectedWaitlistCandidate;
+    public UserDto? SelectedWaitlistCandidate
     {
-        get => _hasWaitlistEntries;
-        set => SetProperty(ref _hasWaitlistEntries, value);
+        get => _selectedWaitlistCandidate;
+        set => SetProperty(ref _selectedWaitlistCandidate, value);
     }
+
+    private bool _isBusy;
 
     public ICommand SaveCommand { get; }
     public ICommand CancelCommand { get; }
     public ICommand RemoveStudentCommand { get; }
     public ICommand RemoveFromWaitlistCommand { get; }
+    public ICommand AddToWaitlistCommand { get; }
 
     public AddActivityViewModel(
         CreateActivityUseCase createActivityUseCase,
         UpdateActivityUseCase updateActivityUseCase,
+        GetActivityUseCase getActivityUseCase,
         GetUsersUseCase getUsersUseCase,
         RemoveUserFromActivityUseCase removeUserFromActivityUseCase,
+        EnrollUserUseCase enrollUserUseCase,
         AddToWaitlistUseCase addToWaitlistUseCase,
         GetWaitlistUseCase getWaitlistUseCase,
         RemoveFromWaitlistUseCase removeFromWaitlistUseCase,
+        WaitlistPromotionService waitlistPromotionService,
         ActivityScheduleDto? activityToEdit = null)
     {
         _createActivityUseCase = createActivityUseCase;
         _updateActivityUseCase = updateActivityUseCase;
+        _getActivityUseCase = getActivityUseCase;
         _getUsersUseCase = getUsersUseCase;
         _removeUserFromActivityUseCase = removeUserFromActivityUseCase;
+        _enrollUserUseCase = enrollUserUseCase;
         _addToWaitlistUseCase = addToWaitlistUseCase;
         _getWaitlistUseCase = getWaitlistUseCase;
         _removeFromWaitlistUseCase = removeFromWaitlistUseCase;
+        _waitlistPromotionService = waitlistPromotionService;
 
         SaveCommand = new RelayCommand(async _ => await SaveAsync(), _ => CanSave());
         CancelCommand = new RelayCommand(_ => Cancel());
         RemoveStudentCommand = new RelayCommand(
             async _ => await RemoveStudentAsync(),
-            _ => SelectedEnrolledStudent != null && _editingActivityId.HasValue);
+            _ => !_isBusy && SelectedEnrolledStudent != null && IsEditing);
         RemoveFromWaitlistCommand = new RelayCommand(
             async _ => await RemoveFromWaitlistAsync(),
-            _ => SelectedWaitlistEntry != null && _editingActivityId.HasValue);
+            _ => !_isBusy && SelectedWaitlistEntry != null && IsEditing);
+        AddToWaitlistCommand = new RelayCommand(
+            async _ => await AddToWaitlistAsync(),
+            _ => !_isBusy && SelectedWaitlistCandidate != null && IsEditing);
 
         PopulateTimes();
 
         if (activityToEdit != null)
         {
             _editingActivityId = activityToEdit.Id;
+            _savedActivity = activityToEdit;
             _name = activityToEdit.Name;
             _classRoom = activityToEdit.Classroom;
             _maxStudents = activityToEdit.MaxStudents;
-            _currentEnrolledCount = activityToEdit.EnrolledStudentsCount;
-            _selectedDay = activityToEdit.Date.ToString("dddd");
-            _selectedDay = char.ToUpper(_selectedDay[0]) + _selectedDay.Substring(1);
+            string day = activityToEdit.Date.ToString("dddd", SpanishCulture);
+            _selectedDay = char.ToUpper(day[0]) + day.Substring(1);
             _selectedTime = activityToEdit.Date.ToString("HH:mm");
-
-            foreach (EnrolledStudentDto student in activityToEdit.EnrolledStudents)
-            {
-                EnrolledStudents.Add(student);
-            }
-
-            _ = LoadWaitlistAsync();
+            ShowStudents(activityToEdit);
         }
         else
         {
             _maxStudents = 10;
         }
 
-        _ = LoadTutorsAsync(activityToEdit?.Tutor);
+        _ = LoadUsersAsync(activityToEdit?.Tutor);
     }
 
     private void PopulateTimes()
@@ -179,61 +211,68 @@ public class AddActivityViewModel : ViewModelBase
         }
     }
 
-    private async Task LoadTutorsAsync(string? tutorToSelect = null)
+    private async Task LoadUsersAsync(string? tutorToSelect = null)
     {
         try
         {
-            IEnumerable<UserDto> users = await _getUsersUseCase.ExecuteAsync();
+            _allUsers = (await _getUsersUseCase.ExecuteAsync()).OrderBy(u => u.FullName).ToList();
+
             Tutors.Clear();
-            foreach (UserDto user in users.Where(u => u.IsTutor))
+            foreach (UserDto user in _allUsers.Where(u => u.IsTutor))
             {
                 Tutors.Add(user);
                 if (tutorToSelect != null && user.FullName == tutorToSelect)
                     SelectedTutor = user;
             }
+
+            if (IsEditing)
+                await RefreshFromDatabaseAsync();
         }
-        catch (System.Exception ex)
+        catch (Exception ex)
         {
-            MessageBox.Show($"Error cargando tutores: {ex.Message}");
+            MessageBox.Show($"Error cargando usuarios: {ex.Message}");
         }
     }
 
-    private async Task LoadWaitlistAsync()
+    private async Task RefreshFromDatabaseAsync()
     {
         if (!_editingActivityId.HasValue) return;
 
-        try
+        ActivityScheduleDto? activity = await _getActivityUseCase.ExecuteByIdAsync(_editingActivityId.Value);
+        if (activity != null)
         {
-            IEnumerable<Domain.Entities.Waitlist> entries =
-                await _getWaitlistUseCase.ExecuteAsync(_editingActivityId.Value);
-
-            WaitlistEntries.Clear();
-            int position = 1;
-            foreach (Domain.Entities.Waitlist entry in entries)
-            {
-                WaitlistEntries.Add(new WaitlistEntryDto
-                {
-                    UserId = entry.UserId,
-                    FullName = string.Join(" ", new[] { entry.User.Name, entry.User.Surname, entry.User.SecondSurname }
-                        .Where(p => !string.IsNullOrWhiteSpace(p))),
-                    JoinedAt = entry.JoinedAt,
-                    Position = position++
-                });
-            }
-
-            HasWaitlistEntries = WaitlistEntries.Count > 0;
+            _savedActivity = activity;
+            ShowStudents(activity);
         }
-        catch (System.Exception ex)
-        {
-            MessageBox.Show($"Error cargando lista de espera: {ex.Message}");
-        }
+
+        List<WaitlistEntryDto> entries = await _getWaitlistUseCase.ExecuteAsync(_editingActivityId.Value);
+        WaitlistEntries.Clear();
+        foreach (WaitlistEntryDto entry in entries)
+            WaitlistEntries.Add(entry);
+
+        HashSet<int> excluded = EnrolledStudents.Select(s => s.Id)
+            .Concat(WaitlistEntries.Select(w => w.UserId))
+            .ToHashSet();
+
+        WaitlistCandidates.Clear();
+        foreach (UserDto user in _allUsers.Where(u => !excluded.Contains(u.Id)))
+            WaitlistCandidates.Add(user);
+    }
+
+    private void ShowStudents(ActivityScheduleDto activity)
+    {
+        EnrolledStudents.Clear();
+        foreach (EnrolledStudentDto student in activity.EnrolledStudents)
+            EnrolledStudents.Add(student);
+
+        OccupancyText = activity.IsFull
+            ? $"{activity.Occupancy} · COMPLETA"
+            : activity.Occupancy;
     }
 
     private async Task RemoveStudentAsync()
     {
-        if (SelectedEnrolledStudent == null || !_editingActivityId.HasValue) return;
-
-        EnrolledStudentDto student = SelectedEnrolledStudent;
+        if (SelectedEnrolledStudent is not { } student || !_editingActivityId.HasValue) return;
 
         MessageBoxResult confirm = MessageBox.Show(
             $"¿Eliminar a \"{student.FullName}\" de esta clase?",
@@ -243,25 +282,17 @@ public class AddActivityViewModel : ViewModelBase
 
         if (confirm != MessageBoxResult.Yes) return;
 
-        try
+        await RunAsync(async () =>
         {
             await _removeUserFromActivityUseCase.ExecuteAsync(student.Id, _editingActivityId.Value);
-            EnrolledStudents.Remove(student);
-            _currentEnrolledCount--;
-            SelectedEnrolledStudent = null;
             WasSaved = true;
-        }
-        catch (System.Exception ex)
-        {
-            MessageBox.Show($"Error al eliminar al alumno: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-        }
+            await _waitlistPromotionService.OfferPromotionsAsync(_editingActivityId.Value);
+        }, "Error al eliminar al alumno");
     }
 
     private async Task RemoveFromWaitlistAsync()
     {
-        if (SelectedWaitlistEntry == null || !_editingActivityId.HasValue) return;
-
-        WaitlistEntryDto entry = SelectedWaitlistEntry;
+        if (SelectedWaitlistEntry is not { } entry || !_editingActivityId.HasValue) return;
 
         MessageBoxResult confirm = MessageBox.Show(
             $"¿Quitar a \"{entry.FullName}\" de la lista de espera?",
@@ -271,22 +302,81 @@ public class AddActivityViewModel : ViewModelBase
 
         if (confirm != MessageBoxResult.Yes) return;
 
-        try
+        await RunAsync(async () =>
         {
             await _removeFromWaitlistUseCase.ExecuteAsync(entry.UserId, _editingActivityId.Value);
-            await LoadWaitlistAsync();
-            SelectedWaitlistEntry = null;
             WasSaved = true;
-        }
-        catch (System.Exception ex)
+        }, "Error al quitar de la lista de espera");
+    }
+
+    private async Task AddToWaitlistAsync()
+    {
+        if (SelectedWaitlistCandidate is not { } user || !_editingActivityId.HasValue) return;
+        int activityId = _editingActivityId.Value;
+
+        await RunAsync(async () =>
         {
-            MessageBox.Show($"Error al quitar al alumno de la lista de espera: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            ActivityScheduleDto? current = await _getActivityUseCase.ExecuteByIdAsync(activityId);
+            if (current == null) return;
+
+            if (!current.IsFull)
+            {
+                // Con plazas libres no tiene sentido esperar: se ofrece inscribirlo directamente
+                MessageBoxResult answer = MessageBox.Show(
+                    $"La clase todavía tiene plazas libres ({current.Occupancy}).\n\n" +
+                    $"¿Inscribir directamente a {user.FullName}?",
+                    "Hay plazas libres",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Question);
+
+                if (answer != MessageBoxResult.Yes) return;
+
+                await _enrollUserUseCase.ExecuteAsync(user.Id, activityId);
+            }
+            else
+            {
+                await _addToWaitlistUseCase.ExecuteAsync(user.Id, activityId);
+            }
+
+            WasSaved = true;
+            SelectedWaitlistCandidate = null;
+        }, "Error al apuntar a la lista de espera");
+    }
+
+    private async Task RunAsync(Func<Task> action, string errorTitle)
+    {
+        _isBusy = true;
+        try
+        {
+            await action();
+        }
+        catch (DomainException ex)
+        {
+            MessageBox.Show(ex.Message, "Aviso", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"{errorTitle}: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            _isBusy = false;
+            try
+            {
+                await RefreshFromDatabaseAsync();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Error al actualizar la ficha: {ex.Message}");
+            }
+            CommandManager.InvalidateRequerySuggested();
         }
     }
 
     private bool CanSave()
     {
-        return !string.IsNullOrWhiteSpace(Name)
+        return !_isBusy
+            && !string.IsNullOrWhiteSpace(Name)
             && SelectedTutor != null
             && !string.IsNullOrWhiteSpace(Classroom)
             && !string.IsNullOrWhiteSpace(SelectedDay)
@@ -296,48 +386,63 @@ public class AddActivityViewModel : ViewModelBase
 
     private async Task SaveAsync()
     {
+        _isBusy = true;
         try
         {
             ActivityDateCalculator dateCalculator = new ActivityDateCalculator();
+            DateTime date = dateCalculator.GetNextOccurrence(SelectedDay, SelectedTime);
 
             if (_editingActivityId.HasValue)
             {
-                UpdateActivityDto dto = new UpdateActivityDto()
+                await _updateActivityUseCase.ExecuteAsync(new UpdateActivityDto
                 {
                     Id = _editingActivityId.Value,
-                    Name = Name,
+                    Name = Name.Trim(),
                     Tutor = SelectedTutor!.FullName,
-                    Classroom = _classRoom,
-                    MaxStudents = _maxStudents,
-                    Date = dateCalculator.GetNextOccurrence(SelectedDay, SelectedTime)
-                };
-                await _updateActivityUseCase.ExecuteAsync(dto);
+                    Classroom = Classroom.Trim(),
+                    MaxStudents = MaxStudents,
+                    Date = date
+                });
+                WasSaved = true;
+
+                // Si se ha subido el aforo, puede haber sitio para los que esperan
+                await _waitlistPromotionService.OfferPromotionsAsync(_editingActivityId.Value);
             }
             else
             {
-                CreateActivityDto dto = new CreateActivityDto()
+                await _createActivityUseCase.ExecuteAsync(new CreateActivityDto
                 {
-                    Name = Name,
+                    Name = Name.Trim(),
                     Tutor = SelectedTutor!.FullName,
-                    Classroom = _classRoom,
-                    MaxStudents = _maxStudents,
-                    Date = dateCalculator.GetNextOccurrence(SelectedDay, SelectedTime)
-                };
-                await _createActivityUseCase.ExecuteAsync(dto);
+                    Classroom = Classroom.Trim(),
+                    MaxStudents = MaxStudents,
+                    Date = date
+                });
+                WasSaved = true;
             }
 
-            WasSaved = true;
             CloseAction?.Invoke();
         }
         catch (DuplicateEntityException ex)
         {
             MessageBox.Show(ex.Message, "Actividad duplicada", MessageBoxButton.OK, MessageBoxImage.Warning);
         }
+        catch (DomainException ex)
+        {
+            MessageBox.Show(ex.Message, "No se puede guardar", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error al guardar la actividad: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            _isBusy = false;
+        }
     }
 
     private void Cancel()
     {
-        WasSaved = false;
         CloseAction?.Invoke();
     }
 }

@@ -7,21 +7,42 @@ namespace CONEX_APP.Infrastructure.Repositories;
 
 public class ActivityRepository : IActivityRepository
 {
-    private readonly AppDbContext _context;
+    private readonly AppDbContextFactory _contextFactory;
 
-    public ActivityRepository(AppDbContext context)
+    public ActivityRepository(AppDbContextFactory contextFactory)
     {
-        _context = context;
+        _contextFactory = contextFactory;
     }
 
     public async Task<IEnumerable<Activity>> GetAllAsync()
     {
-        return await _context.Activities.Include(a => a.Students).ToListAsync();
+        await using AppDbContext context = _contextFactory.Create();
+        return await context.Activities.AsNoTracking().Include(a => a.Students).ToListAsync();
+    }
+
+    public async Task<Activity?> GetByIdAsync(int id)
+    {
+        await using AppDbContext context = _contextFactory.Create();
+        return await context.Activities.AsNoTracking().Include(a => a.Students).FirstOrDefaultAsync(a => a.Id == id);
+    }
+
+    public async Task<IEnumerable<Activity>> GetByIdsAsync(IEnumerable<int> ids)
+    {
+        List<int> idList = ids.Distinct().ToList();
+        if (idList.Count == 0)
+            return [];
+
+        await using AppDbContext context = _contextFactory.Create();
+        return await context.Activities.AsNoTracking()
+            .Include(a => a.Students)
+            .Where(a => idList.Contains(a.Id))
+            .ToListAsync();
     }
 
     public async Task<bool> ExistsAsync(string name, int? excludeId = null)
     {
-        IQueryable<Activity> query = _context.Activities.AsQueryable();
+        await using AppDbContext context = _contextFactory.Create();
+        IQueryable<Activity> query = context.Activities.AsQueryable();
 
         if (excludeId.HasValue)
             query = query.Where(a => a.Id != excludeId.Value);
@@ -31,24 +52,70 @@ public class ActivityRepository : IActivityRepository
 
     public async Task AddAsync(Activity activity)
     {
-        _context.Activities.Add(activity);
-        await _context.SaveChangesAsync();
+        await using AppDbContext context = _contextFactory.Create();
+        context.Activities.Add(activity);
+        await context.SaveChangesAsync();
     }
 
     public async Task UpdateAsync(Activity activity)
     {
-        _context.Activities.Update(activity);
-        await _context.SaveChangesAsync();
+        await using AppDbContext context = _contextFactory.Create();
+        Activity existing = await context.Activities.FindAsync(activity.Id)
+            ?? throw new InvalidOperationException($"Clase con Id {activity.Id} no encontrada.");
+
+        existing.Name = activity.Name;
+        existing.Tutor = activity.Tutor;
+        existing.Classroom = activity.Classroom;
+        existing.Date = activity.Date;
+        existing.MaxStudents = activity.MaxStudents;
+
+        await context.SaveChangesAsync();
     }
 
     public async Task DeleteAsync(int id)
     {
-        Activity? activity = await _context.Activities.FindAsync(id);
+        await using AppDbContext context = _contextFactory.Create();
+        Activity? activity = await context.Activities.FindAsync(id);
         if (activity != null)
         {
-            _context.Activities.Remove(activity);
-            await _context.SaveChangesAsync();
+            context.Activities.Remove(activity);
+            await context.SaveChangesAsync();
         }
     }
 
+    public async Task EnrollAsync(int userId, int activityId)
+    {
+        await using AppDbContext context = _contextFactory.Create();
+
+        Activity activity = await context.Activities.Include(a => a.Students).FirstOrDefaultAsync(a => a.Id == activityId)
+            ?? throw new InvalidOperationException($"Clase con Id {activityId} no encontrada.");
+
+        if (activity.Students.All(s => s.Id != userId))
+        {
+            User user = await context.Users.FindAsync(userId)
+                ?? throw new InvalidOperationException($"Usuario con Id {userId} no encontrado.");
+            activity.Students.Add(user);
+        }
+
+        List<Waitlist> entries = await context.Waitlists
+            .Where(w => w.UserId == userId && w.ActivityId == activityId)
+            .ToListAsync();
+        context.Waitlists.RemoveRange(entries);
+
+        // Un único SaveChanges es una única transacción: o se hacen las dos cosas o ninguna
+        await context.SaveChangesAsync();
+    }
+
+    public async Task UnenrollAsync(int userId, int activityId)
+    {
+        await using AppDbContext context = _contextFactory.Create();
+
+        Activity? activity = await context.Activities.Include(a => a.Students).FirstOrDefaultAsync(a => a.Id == activityId);
+        User? student = activity?.Students.FirstOrDefault(s => s.Id == userId);
+        if (activity == null || student == null)
+            return;
+
+        activity.Students.Remove(student);
+        await context.SaveChangesAsync();
+    }
 }

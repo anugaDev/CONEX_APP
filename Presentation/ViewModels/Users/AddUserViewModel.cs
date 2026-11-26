@@ -1,47 +1,61 @@
 using System.Collections.ObjectModel;
+using System.Net.Mail;
 using System.Windows;
 using System.Windows.Input;
 using CONEX_APP.Domain.Exceptions;
 using CONEX_APP.MainApplication.DTOs;
-using CONEX_APP.Application.DTOs;
 using CONEX_APP.MainApplication.UseCases.Activities;
-using CONEX_APP.MainApplication.UseCases.Registrations;
 using CONEX_APP.MainApplication.UseCases.Users;
+using CONEX_APP.MainApplication.UseCases.Waitlists;
 using CONEX_APP.Presentation.Commands;
+using CONEX_APP.Presentation.Services;
 
 namespace CONEX_APP.Presentation.ViewModels.Users;
+
+public class UserWaitlistItem
+{
+    public ActivityScheduleDto Activity { get; init; } = new();
+
+    public int? Position { get; init; }
+
+    public string ActivityName => Activity.Name;
+
+    public string StatusLabel => Position.HasValue
+        ? $"#{Position} en la lista"
+        : "nueva: se apuntará al guardar";
+}
 
 public class AddUserViewModel : ViewModelBase
 {
     private readonly CreateUserUseCase _createUserUseCase;
     private readonly UpdateUserUseCase _updateUserUseCase;
     private readonly GetActivityUseCase _getActivityUseCase;
-    private readonly RemoveUserFromActivityUseCase _removeUserFromActivityUseCase;
+    private readonly GetWaitlistUseCase _getWaitlistUseCase;
+    private readonly AddToWaitlistUseCase _addToWaitlistUseCase;
+    private readonly RemoveFromWaitlistUseCase _removeFromWaitlistUseCase;
+    private readonly WaitlistPromotionService _waitlistPromotionService;
 
     private readonly int? _editingUserId;
+
+    private readonly HashSet<int> _originalEnrolledIds = new();
+
+    private readonly HashSet<int> _originalWaitlistIds = new();
 
     public Action? CloseAction { get; set; }
     public bool WasSaved { get; private set; }
 
+    public string WindowTitle => _editingUserId.HasValue ? "Editar Usuario" : "Añadir Nuevo Usuario";
+
     private string _name = string.Empty;
-    
     private string _surname = string.Empty;
-
     private string _secondSurname = string.Empty;
-    
     private string _idCard = string.Empty;
-
     private string _phone = string.Empty;
-    
     private string _address = string.Empty;
-    
     private string _location = string.Empty;
-    
     private string _email = string.Empty;
-    
-    private bool _isPartner = false;
-    
-    private bool _isTutor = false;
+    private bool _isPartner;
+    private bool _isTutor;
 
     // --- Errores de validación por campo ---
     private string _nameError = string.Empty;
@@ -52,25 +66,25 @@ public class AddUserViewModel : ViewModelBase
     public string NameError
     {
         get => _nameError;
-        set => SetProperty(ref _nameError, value);
+        set { SetProperty(ref _nameError, value); OnPropertyChanged(nameof(HasNameError)); }
     }
 
     public string SurnameError
     {
         get => _surnameError;
-        set => SetProperty(ref _surnameError, value);
+        set { SetProperty(ref _surnameError, value); OnPropertyChanged(nameof(HasSurnameError)); }
     }
 
     public string IdCardError
     {
         get => _idCardError;
-        set => SetProperty(ref _idCardError, value);
+        set { SetProperty(ref _idCardError, value); OnPropertyChanged(nameof(HasIdCardError)); }
     }
 
     public string EmailError
     {
         get => _emailError;
-        set => SetProperty(ref _emailError, value);
+        set { SetProperty(ref _emailError, value); OnPropertyChanged(nameof(HasEmailError)); }
     }
 
     // Verdadero cuando el campo tiene error (para trigger en XAML)
@@ -79,7 +93,6 @@ public class AddUserViewModel : ViewModelBase
     public bool HasIdCardError  => !string.IsNullOrEmpty(IdCardError);
     public bool HasEmailError   => !string.IsNullOrEmpty(EmailError);
 
-    
     public string Name
     {
         get => _name;
@@ -87,10 +100,7 @@ public class AddUserViewModel : ViewModelBase
         {
             SetProperty(ref _name, value);
             if (!string.IsNullOrWhiteSpace(value))
-            {
                 NameError = string.Empty;
-                OnPropertyChanged(nameof(HasNameError));
-            }
         }
     }
 
@@ -101,10 +111,7 @@ public class AddUserViewModel : ViewModelBase
         {
             SetProperty(ref _surname, value);
             if (!string.IsNullOrWhiteSpace(value))
-            {
                 SurnameError = string.Empty;
-                OnPropertyChanged(nameof(HasSurnameError));
-            }
         }
     }
 
@@ -121,10 +128,7 @@ public class AddUserViewModel : ViewModelBase
         {
             SetProperty(ref _idCard, value);
             if (!string.IsNullOrWhiteSpace(value))
-            {
                 IdCardError = string.Empty;
-                OnPropertyChanged(nameof(HasIdCardError));
-            }
         }
     }
 
@@ -133,7 +137,7 @@ public class AddUserViewModel : ViewModelBase
         get => _phone;
         set => SetProperty(ref _phone, value);
     }
-    
+
     public string Address
     {
         get => _address;
@@ -152,11 +156,7 @@ public class AddUserViewModel : ViewModelBase
         set
         {
             SetProperty(ref _email, value);
-            if (!string.IsNullOrWhiteSpace(value))
-            {
-                EmailError = string.Empty;
-                OnPropertyChanged(nameof(HasEmailError));
-            }
+            EmailError = string.Empty;
         }
     }
 
@@ -172,6 +172,33 @@ public class AddUserViewModel : ViewModelBase
         set => SetProperty(ref _isTutor, value);
     }
 
+    // --- Clases ---
+
+    public ObservableCollection<ActivityScheduleDto> AvailableActivities { get; } = new();
+
+    public ObservableCollection<ActivityScheduleDto> SelectedActivities { get; } = new();
+
+    public ObservableCollection<UserWaitlistItem> WaitlistItems { get; } = new();
+
+    private ActivityScheduleDto? _selectedActivityToAdd;
+    public ActivityScheduleDto? SelectedActivityToAdd
+    {
+        get => _selectedActivityToAdd;
+        set
+        {
+            SetProperty(ref _selectedActivityToAdd, value);
+            if (value == null) return;
+
+            // Se procesa después de que el desplegable termine de actualizarse: puede abrir un diálogo
+            System.Windows.Application.Current.Dispatcher.InvokeAsync(() =>
+            {
+                _selectedActivityToAdd = null;
+                OnPropertyChanged(nameof(SelectedActivityToAdd));
+                AddActivity(value);
+            });
+        }
+    }
+
     private ActivityScheduleDto? _selectedActivityToRemove;
     public ActivityScheduleDto? SelectedActivityToRemove
     {
@@ -180,45 +207,47 @@ public class AddUserViewModel : ViewModelBase
         {
             SetProperty(ref _selectedActivityToRemove, value);
             OnPropertyChanged(nameof(CanRemoveActivity));
-            ((RelayCommand)RemoveActivityCommand).RaiseCanExecuteChanged();
         }
     }
 
     public bool CanRemoveActivity => _selectedActivityToRemove != null;
 
-    public ObservableCollection<ActivityScheduleDto> AvailableActivities { get; } = new();
-    public ObservableCollection<ActivityScheduleDto> SelectedActivities { get; } = new();
-
-    private ActivityScheduleDto? _selectedActivityToAdd;
-    public ActivityScheduleDto? SelectedActivityToAdd
+    private UserWaitlistItem? _selectedWaitlistItem;
+    public UserWaitlistItem? SelectedWaitlistItem
     {
-        get => _selectedActivityToAdd;
-        set 
-        {
-            SetProperty(ref _selectedActivityToAdd, value);
-            if (value != null)
-            {
-                SelectedActivities.Add(value);
-                AvailableActivities.Remove(value);
-                SetProperty(ref _selectedActivityToAdd, null);
-            }
-        }
+        get => _selectedWaitlistItem;
+        set => SetProperty(ref _selectedWaitlistItem, value);
     }
+
+    private bool _isBusy;
 
     public ICommand SaveCommand { get; }
     public ICommand CancelCommand { get; }
     public ICommand RemoveActivityCommand { get; }
+    public ICommand RemoveFromWaitlistCommand { get; }
 
-    public AddUserViewModel(CreateUserUseCase createUserUseCase, UpdateUserUseCase updateUserUseCase, GetActivityUseCase getActivityUseCase, RemoveUserFromActivityUseCase removeUserFromActivityUseCase, UserDto? userToEdit = null)
+    public AddUserViewModel(
+        CreateUserUseCase createUserUseCase,
+        UpdateUserUseCase updateUserUseCase,
+        GetActivityUseCase getActivityUseCase,
+        GetWaitlistUseCase getWaitlistUseCase,
+        AddToWaitlistUseCase addToWaitlistUseCase,
+        RemoveFromWaitlistUseCase removeFromWaitlistUseCase,
+        WaitlistPromotionService waitlistPromotionService,
+        UserDto? userToEdit = null)
     {
         _createUserUseCase = createUserUseCase;
         _updateUserUseCase = updateUserUseCase;
         _getActivityUseCase = getActivityUseCase;
-        _removeUserFromActivityUseCase = removeUserFromActivityUseCase;
-        
-        SaveCommand = new RelayCommand(async _ => await SaveAsync());
+        _getWaitlistUseCase = getWaitlistUseCase;
+        _addToWaitlistUseCase = addToWaitlistUseCase;
+        _removeFromWaitlistUseCase = removeFromWaitlistUseCase;
+        _waitlistPromotionService = waitlistPromotionService;
+
+        SaveCommand = new RelayCommand(async _ => await SaveAsync(), _ => !_isBusy);
         CancelCommand = new RelayCommand(_ => Cancel());
-        RemoveActivityCommand = new RelayCommand(async _ => await RemoveActivityAsync(), _ => SelectedActivityToRemove != null);
+        RemoveActivityCommand = new RelayCommand(_ => RemoveActivity(), _ => SelectedActivityToRemove != null);
+        RemoveFromWaitlistCommand = new RelayCommand(_ => RemoveFromWaitlist(), _ => SelectedWaitlistItem != null);
 
         if (userToEdit != null)
         {
@@ -233,35 +262,101 @@ public class AddUserViewModel : ViewModelBase
             _location = userToEdit.Location;
             _isPartner = userToEdit.IsPartner;
             _isTutor = userToEdit.IsTutor;
+            _originalEnrolledIds.UnionWith(userToEdit.EnrolledActivityIds);
         }
 
-        _ = LoadActivitiesAsync(userToEdit?.EnrolledActivityIds);
+        _ = LoadActivitiesAsync();
     }
 
-    private async Task LoadActivitiesAsync(List<int>? enrolledActivityIds = null)
+    private async Task LoadActivitiesAsync()
     {
         try
         {
-            IEnumerable<ActivityScheduleDto> activities = await _getActivityUseCase.ExecuteAsync();
+            List<ActivityScheduleDto> activities = (await _getActivityUseCase.ExecuteAsync())
+                .OrderBy(a => a.Name)
+                .ToList();
+
+            List<UserWaitlistEntryDto> waitlists = _editingUserId.HasValue
+                ? await _getWaitlistUseCase.ExecuteForUserAsync(_editingUserId.Value)
+                : new List<UserWaitlistEntryDto>();
+            Dictionary<int, int> waitlistPositions = waitlists.ToDictionary(w => w.ActivityId, w => w.Position);
+            _originalWaitlistIds.UnionWith(waitlistPositions.Keys);
+
             AvailableActivities.Clear();
             SelectedActivities.Clear();
+            WaitlistItems.Clear();
 
-            foreach (ActivityScheduleDto act in activities)
+            foreach (ActivityScheduleDto activity in activities)
             {
-                if (enrolledActivityIds != null && enrolledActivityIds.Contains(act.Id))
-                {
-                    SelectedActivities.Add(act);
-                }
-                else if (act.MaxStudents == 0 || act.EnrolledStudentsCount < act.MaxStudents)
-                {
-                    AvailableActivities.Add(act);
-                }
+                if (_originalEnrolledIds.Contains(activity.Id))
+                    SelectedActivities.Add(activity);
+                else if (waitlistPositions.TryGetValue(activity.Id, out int position))
+                    WaitlistItems.Add(new UserWaitlistItem { Activity = activity, Position = position });
+                else
+                    AvailableActivities.Add(activity);
             }
         }
-        catch (System.Exception ex)
+        catch (Exception ex)
         {
-            System.Windows.MessageBox.Show($"Error cargando clases: {ex.Message}");
+            MessageBox.Show($"Error cargando clases: {ex.Message}");
         }
+    }
+
+    private void AddActivity(ActivityScheduleDto activity)
+    {
+        if (!AvailableActivities.Contains(activity))
+            return;
+
+        // Si ya estaba inscrito al abrir la ficha, su plaza sigue siendo suya aunque la clase figure completa
+        bool keepsOwnSeat = _originalEnrolledIds.Contains(activity.Id);
+
+        if (activity.IsFull && !keepsOwnSeat)
+        {
+            string waiting = activity.WaitlistCount == 1 ? "1 persona" : $"{activity.WaitlistCount} personas";
+            MessageBoxResult answer = MessageBox.Show(
+                $"La clase \"{activity.Name}\" está completa ({activity.Occupancy}).\n" +
+                $"Ahora mismo hay {waiting} en la lista de espera.\n\n" +
+                "¿Añadir al usuario a la lista de espera?",
+                "Clase completa",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Question);
+
+            if (answer != MessageBoxResult.Yes)
+                return;
+
+            AvailableActivities.Remove(activity);
+            WaitlistItems.Add(new UserWaitlistItem { Activity = activity });
+            return;
+        }
+
+        AvailableActivities.Remove(activity);
+        SelectedActivities.Add(activity);
+    }
+
+    private void RemoveActivity()
+    {
+        if (SelectedActivityToRemove is not { } activity) return;
+
+        SelectedActivities.Remove(activity);
+        InsertSorted(AvailableActivities, activity);
+        SelectedActivityToRemove = null;
+    }
+
+    private void RemoveFromWaitlist()
+    {
+        if (SelectedWaitlistItem is not { } item) return;
+
+        WaitlistItems.Remove(item);
+        InsertSorted(AvailableActivities, item.Activity);
+        SelectedWaitlistItem = null;
+    }
+
+    private static void InsertSorted(ObservableCollection<ActivityScheduleDto> list, ActivityScheduleDto activity)
+    {
+        int index = 0;
+        while (index < list.Count && string.Compare(list[index].Name, activity.Name, StringComparison.CurrentCultureIgnoreCase) < 0)
+            index++;
+        list.Insert(index, activity);
     }
 
     /// <summary>
@@ -274,130 +369,165 @@ public class AddUserViewModel : ViewModelBase
         if (string.IsNullOrWhiteSpace(Name))
         {
             NameError = "El nombre es obligatorio.";
-            OnPropertyChanged(nameof(HasNameError));
             valid = false;
         }
 
         if (string.IsNullOrWhiteSpace(Surname))
         {
             SurnameError = "El primer apellido es obligatorio.";
-            OnPropertyChanged(nameof(HasSurnameError));
             valid = false;
         }
 
         if (string.IsNullOrWhiteSpace(IdCard))
         {
             IdCardError = "El DNI/NIF es obligatorio.";
-            OnPropertyChanged(nameof(HasIdCardError));
             valid = false;
         }
 
-        if (string.IsNullOrWhiteSpace(Email))
+        // El correo es opcional (muchos socios importados no lo tienen), pero si se pone tiene que ser válido
+        if (!string.IsNullOrWhiteSpace(Email) && !IsValidEmail(Email.Trim()))
         {
-            EmailError = "El correo electrónico es obligatorio.";
-            OnPropertyChanged(nameof(HasEmailError));
+            EmailError = "El correo electrónico no tiene un formato válido.";
             valid = false;
         }
 
         return valid;
     }
 
-    private async Task RemoveActivityAsync()
-    {
-        if (SelectedActivityToRemove == null) return;
-
-        ActivityScheduleDto actToRemove = SelectedActivityToRemove;
-
-        // New user: just remove from the list in memory, no DB call needed
-        if (!_editingUserId.HasValue)
-        {
-            SelectedActivities.Remove(actToRemove);
-            if (actToRemove.MaxStudents == 0 || actToRemove.EnrolledStudentsCount < actToRemove.MaxStudents)
-                AvailableActivities.Add(actToRemove);
-            SelectedActivityToRemove = null;
-            return;
-        }
-
-        // Existing user: confirm and call the use case
-        MessageBoxResult confirm = MessageBox.Show(
-            $"¿Eliminar al usuario de la clase \"{actToRemove.Name}\"?",
-            "Confirmar baja de clase",
-            MessageBoxButton.YesNo,
-            MessageBoxImage.Question);
-
-        if (confirm != MessageBoxResult.Yes) return;
-
-        try
-        {
-            await _removeUserFromActivityUseCase.ExecuteAsync(_editingUserId.Value, actToRemove.Id);
-            SelectedActivities.Remove(actToRemove);
-            if (actToRemove.MaxStudents == 0 || actToRemove.EnrolledStudentsCount - 1 < actToRemove.MaxStudents)
-                AvailableActivities.Add(actToRemove);
-            SelectedActivityToRemove = null;
-            WasSaved = true;
-        }
-        catch (Exception ex)
-        {
-            MessageBox.Show($"Error al eliminar de la clase: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-        }
-    }
+    private static bool IsValidEmail(string email) =>
+        MailAddress.TryCreate(email, out MailAddress? address)
+        && address.Address == email
+        && address.Host.Contains('.');
 
     private async Task SaveAsync()
     {
         if (!Validate()) return;
 
+        _isBusy = true;
         try
         {
+            List<int> selectedIds = SelectedActivities.Select(a => a.Id).ToList();
+            int userId;
+
             if (_editingUserId.HasValue)
             {
-                UpdateUserDto dto = new UpdateUserDto
+                userId = _editingUserId.Value;
+                await _updateUserUseCase.ExecuteAsync(new UpdateUserDto
                 {
-                    Id = _editingUserId.Value,
-                    Name = Name, 
-                    Surname = Surname,
-                    SecondSurname = SecondSurname,
-                    Email = Email,
-                    Phone = Phone,
-                    Address = Address,
-                    Location = Location,
-                    IdCard = IdCard,
+                    Id = userId,
+                    Name = Name.Trim(),
+                    Surname = Surname.Trim(),
+                    SecondSurname = SecondSurname.Trim(),
+                    Email = Email.Trim(),
+                    Phone = Phone.Trim(),
+                    Address = Address.Trim(),
+                    Location = Location.Trim(),
+                    IdCard = IdCard.Trim(),
                     IsPartner = IsPartner,
                     IsTutor = IsTutor,
-                    SelectedActivityIds = SelectedActivities.Select(a => a.Id).ToList()
-                };
-                await _updateUserUseCase.ExecuteAsync(dto);
+                    SelectedActivityIds = selectedIds
+                });
             }
             else
             {
-                CreateUserDto dto = GetNewUSerDto();
-                await _createUserUseCase.ExecuteAsync(dto);
+                userId = await _createUserUseCase.ExecuteAsync(new CreateUserDto
+                {
+                    Name = Name.Trim(),
+                    Surname = Surname.Trim(),
+                    SecondSurname = SecondSurname.Trim(),
+                    Email = Email.Trim(),
+                    Phone = Phone.Trim(),
+                    Address = Address.Trim(),
+                    Location = Location.Trim(),
+                    IdCard = IdCard.Trim(),
+                    IsPartner = IsPartner,
+                    IsTutor = IsTutor,
+                    SelectedActivityIds = selectedIds
+                });
             }
+
+            // A partir de aquí el usuario ya está guardado: la ventana se cerrará pase lo que pase
             WasSaved = true;
+
+            List<string> warnings = await SaveWaitlistChangesAsync(userId);
+
+            // Las plazas que deja libres pueden ser para el primero de la lista de espera
+            IEnumerable<int> freedActivityIds = _originalEnrolledIds.Where(id => !selectedIds.Contains(id));
+            await _waitlistPromotionService.OfferPromotionsAsync(freedActivityIds);
+
+            if (warnings.Count > 0)
+            {
+                MessageBox.Show(
+                    "El usuario se ha guardado, pero algunas listas de espera no se han podido actualizar:\n\n" +
+                    string.Join("\n", warnings.Select(w => $"• {w}")),
+                    "Listas de espera",
+                    MessageBoxButton.OK,
+                    MessageBoxImage.Warning);
+            }
+
             CloseAction?.Invoke();
         }
         catch (DuplicateEntityException ex)
         {
             // Mostrar el error en el campo DNI/NIF ya que suele ser el duplicado
             IdCardError = ex.Message;
-            OnPropertyChanged(nameof(HasIdCardError));
+        }
+        catch (ActivityFullException ex)
+        {
+            // Otra persona ha ocupado la última plaza desde que se abrió la ficha: se devuelve la clase
+            // a la lista con los datos actualizados y se ofrece la lista de espera
+            MessageBox.Show(ex.Message, "Clase completa", MessageBoxButton.OK, MessageBoxImage.Warning);
+            await ReofferFullActivityAsync(ex.ActivityId);
+        }
+        catch (DomainException ex)
+        {
+            MessageBox.Show(ex.Message, "No se puede guardar", MessageBoxButton.OK, MessageBoxImage.Warning);
+        }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error al guardar el usuario: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+        finally
+        {
+            _isBusy = false;
         }
     }
 
-    private CreateUserDto GetNewUSerDto()
+    private async Task ReofferFullActivityAsync(int activityId)
     {
-        return new CreateUserDto {
-            Name = Name, 
-            Surname = Surname,
-            SecondSurname = SecondSurname,
-            Email = Email ,
-            Phone = Phone,
-            Address = Address,
-            Location = Location,
-            IdCard = IdCard,
-            IsPartner = IsPartner,
-            IsTutor = IsTutor,
-            SelectedActivityIds = SelectedActivities.Select(a => a.Id).ToList()
-        };
+        ActivityScheduleDto? stale = SelectedActivities.FirstOrDefault(a => a.Id == activityId);
+        if (stale == null) return;
+
+        SelectedActivities.Remove(stale);
+
+        ActivityScheduleDto? refreshed = await _getActivityUseCase.ExecuteByIdAsync(activityId);
+        if (refreshed == null) return;
+
+        InsertSorted(AvailableActivities, refreshed);
+        AddActivity(refreshed);
+    }
+
+    private async Task<List<string>> SaveWaitlistChangesAsync(int userId)
+    {
+        List<string> warnings = new();
+        HashSet<int> currentIds = WaitlistItems.Select(w => w.Activity.Id).ToHashSet();
+
+        foreach (int activityId in _originalWaitlistIds.Where(id => !currentIds.Contains(id)))
+            await _removeFromWaitlistUseCase.ExecuteAsync(userId, activityId);
+
+        foreach (UserWaitlistItem item in WaitlistItems.Where(w => !_originalWaitlistIds.Contains(w.Activity.Id)))
+        {
+            try
+            {
+                await _addToWaitlistUseCase.ExecuteAsync(userId, item.Activity.Id);
+            }
+            catch (DomainException ex)
+            {
+                warnings.Add(ex.Message);
+            }
+        }
+
+        return warnings;
     }
 
     private void Cancel()

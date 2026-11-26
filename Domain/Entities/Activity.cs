@@ -7,14 +7,18 @@ public class Activity
     public string Name { get; set; } = string.Empty;
 
     public string Tutor { get; set; } = string.Empty;
-    
+
     public string Classroom { get; set; } = string.Empty;
-    
+
     public DateTime Date {get; set; }
-    
+
     public int MaxStudents { get; set; }
-    
+
     public DateTime CreatedAt { get; set; }
 
     public ICollection<User> Students { get; set; } = new List<User>();
+
+    public bool HasCapacityLimit => MaxStudents > 0;
+
+    public bool IsFull => HasCapacityLimit && Students.Count >= MaxStudents;
 }

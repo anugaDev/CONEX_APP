@@ -3,28 +3,15 @@ using Microsoft.EntityFrameworkCore;
 
 namespace CONEX_APP.Infrastructure.Data.Context;
 
-public enum DatabaseMode
-{
-    Test,
-    Production
-}
-
 public class AppDbContext : DbContext
 {
-    public static DatabaseMode Mode { get; set; } = DatabaseMode.Production;
-
-    private static string DatabaseFileName => Mode switch
-    {
-        DatabaseMode.Test => "conex_app_test.db",
-        DatabaseMode.Production => "conex_app.db",
-        _ => "conex_app.db"
-    };
-
     public DbSet<User> Users { get; set; }
-    
+
     public DbSet<Activity> Activities { get; set; }
 
     public DbSet<Renewal> Renewals { get; set; }
+
+    public DbSet<RenewalClass> RenewalClasses { get; set; }
 
     public DbSet<AppSettings> AppSettings { get; set; }
 
@@ -32,7 +19,7 @@ public class AppDbContext : DbContext
 
     protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
     {
-        optionsBuilder.UseSqlite($"Data Source={DatabaseFileName}");
+        optionsBuilder.UseSqlite(DatabasePaths.BuildConnectionString(DatabasePaths.CurrentDatabasePath));
     }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
@@ -53,6 +40,12 @@ public class AppDbContext : DbContext
             .HasForeignKey(r => r.UserId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        modelBuilder.Entity<Renewal>()
+            .HasMany(r => r.Classes)
+            .WithOne()
+            .HasForeignKey(c => c.RenewalId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         modelBuilder.Entity<Waitlist>()
             .HasOne(w => w.User)
             .WithMany()
@@ -64,13 +57,5 @@ public class AppDbContext : DbContext
             .WithMany()
             .HasForeignKey(w => w.ActivityId)
             .OnDelete(DeleteBehavior.Cascade);
-
-        modelBuilder.Entity<AppSettings>().HasData(new AppSettings
-        {
-            Id = 1,
-            RenewalPeriodMonths = 12,
-            RenewalCost = 0,
-            ClassCost = 0
-        });
     }
 }

@@ -1,4 +1,3 @@
-using System.Threading.Tasks;
 using CONEX_APP.Domain.Entities;
 using CONEX_APP.Domain.Exceptions;
 using CONEX_APP.Domain.Interfaces;
@@ -21,6 +20,17 @@ public class UpdateActivityUseCase
         if (exists)
             throw new DuplicateEntityException(
                 $"Ya existe otra actividad con el nombre \"{dto.Name}\".");
+
+        Activity current = await _activityRepository.GetByIdAsync(dto.Id)
+            ?? throw new DomainException("La clase ya no existe. Puede que se haya borrado.");
+
+        if (dto.MaxStudents < 0)
+            throw new DomainException("El aforo máximo no puede ser negativo.");
+
+        if (dto.MaxStudents > 0 && dto.MaxStudents < current.Students.Count)
+            throw new DomainException(
+                $"El aforo no puede ser menor que el número de alumnos inscritos ({current.Students.Count}). " +
+                "Quita alumnos de la clase antes de reducirlo.");
 
         Activity activity = new Activity
         {

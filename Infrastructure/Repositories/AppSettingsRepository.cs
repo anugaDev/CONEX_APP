@@ -1,39 +1,41 @@
 using CONEX_APP.Domain.Entities;
 using CONEX_APP.Domain.Interfaces;
 using CONEX_APP.Infrastructure.Data.Context;
-using Microsoft.EntityFrameworkCore;
 
 namespace CONEX_APP.Infrastructure.Repositories;
 
 public class AppSettingsRepository : IAppSettingsRepository
 {
-    private readonly AppDbContext _context;
+    private const int SettingsId = 1;
 
-    public AppSettingsRepository(AppDbContext context)
+    private readonly AppDbContextFactory _contextFactory;
+
+    public AppSettingsRepository(AppDbContextFactory contextFactory)
     {
-        _context = context;
+        _contextFactory = contextFactory;
     }
 
     public async Task<AppSettings> GetAsync()
     {
-        // Siempre devolvemos el único registro con Id = 1.
-        // Si por algún motivo no existiera, lo creamos aquí.
-        AppSettings? settings = await _context.AppSettings.FindAsync(1);
+        // Siempre hay un único registro con Id = 1 (lo crea schema.sql). Si faltara, lo creamos aquí.
+        await using AppDbContext context = _contextFactory.Create();
+        AppSettings? settings = await context.AppSettings.FindAsync(SettingsId);
         if (settings == null)
         {
-            settings = new AppSettings { Id = 1, RenewalPeriodMonths = 12, RenewalCost = 0, ClassCost = 0 };
-            _context.AppSettings.Add(settings);
-            await _context.SaveChangesAsync();
+            settings = new AppSettings { Id = SettingsId, RenewalPeriodMonths = 12, RenewalCost = 0, ClassCost = 0 };
+            context.AppSettings.Add(settings);
+            await context.SaveChangesAsync();
         }
         return settings;
     }
 
     public async Task SaveAsync(AppSettings settings)
     {
-        AppSettings? existing = await _context.AppSettings.FindAsync(settings.Id);
+        await using AppDbContext context = _contextFactory.Create();
+        AppSettings? existing = await context.AppSettings.FindAsync(settings.Id);
         if (existing == null)
         {
-            _context.AppSettings.Add(settings);
+            context.AppSettings.Add(settings);
         }
         else
         {
@@ -41,6 +43,6 @@ public class AppSettingsRepository : IAppSettingsRepository
             existing.RenewalCost = settings.RenewalCost;
             existing.ClassCost = settings.ClassCost;
         }
-        await _context.SaveChangesAsync();
+        await context.SaveChangesAsync();
     }
 }

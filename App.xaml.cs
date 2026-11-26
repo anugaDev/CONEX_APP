@@ -1,7 +1,6 @@
-using System.IO;
 using System.Windows;
-using CONEX_APP.Infrastructure.Data.Context;
-using Microsoft.EntityFrameworkCore;
+using CONEX_APP.Infrastructure.Data;
+using CONEX_APP.Presentation.Views;
 
 namespace CONEX_APP;
 
@@ -11,46 +10,40 @@ public partial class App : System.Windows.Application
     {
         base.OnStartup(e);
 
-        AppDbContext.Mode = DatabaseMode.Production;
+        // Production = BD con los datos reales. Test = BD vacía para desarrollo.
+        DatabasePaths.Mode = DatabaseMode.Production;
 
-        ImportUsersIfNeeded();
-    }
-
-    private void ImportUsersIfNeeded()
-    {
-        if (AppDbContext.Mode != DatabaseMode.Production)
-            return;
-
-        string sqlFile = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "..", "..", "..", "tools", "import_data.sql");
-        sqlFile = Path.GetFullPath(sqlFile);
-
-        string flagFile = sqlFile + ".imported";
-
-        if (File.Exists(flagFile) || !File.Exists(sqlFile))
-            return;
-
+        DatabaseStartupResult database;
         try
         {
-            using AppDbContext dbContext = new AppDbContext();
-            string sql = File.ReadAllText(sqlFile);
-            dbContext.Database.ExecuteSqlRaw(sql);
-
-            File.WriteAllText(flagFile, $"Imported on {DateTime.Now:yyyy-MM-dd HH:mm:ss}");
-
-            MessageBox.Show(
-                "Se han importado los usuarios, actividades y sus relaciones correctamente.",
-                "Importación completada",
-                MessageBoxButton.OK,
-                MessageBoxImage.Information);
+            database = DatabaseBootstrapper.Initialize();
         }
         catch (Exception ex)
         {
             MessageBox.Show(
-                $"Error al importar datos:\n{ex.Message}",
-                "Error de importación",
+                $"No se ha podido preparar la base de datos:\n\n{ex.Message}\n\nRuta: {DatabasePaths.CurrentDatabasePath}",
+                "Error de base de datos",
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
+            Shutdown(1);
+            return;
         }
+
+        if (database.MigratedFrom != null)
+        {
+            MessageBox.Show(
+                "La base de datos se ha trasladado a su nueva ubicación:\n\n" +
+                $"{database.DatabasePath}\n\n" +
+                "Se ha copiado desde:\n\n" +
+                $"{database.MigratedFrom}\n\n" +
+                "El fichero antiguo se conserva, pero la aplicación ya no lo usa.",
+                "Base de datos trasladada",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+        }
+
+        MainWindow window = new MainWindow();
+        MainWindow = window;
+        window.Show();
     }
 }
-

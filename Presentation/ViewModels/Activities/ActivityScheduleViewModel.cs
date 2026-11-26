@@ -4,28 +4,17 @@ using System.Diagnostics;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
-using CONEX_APP.Application.DTOs;
-using CONEX_APP.MainApplication.UseCases.Activities;
-using CONEX_APP.MainApplication.UseCases.Registrations;
-using CONEX_APP.MainApplication.UseCases.Users;
-using CONEX_APP.MainApplication.UseCases.Waitlists;
+using CONEX_APP.MainApplication.DTOs;
 using CONEX_APP.Presentation.Commands;
 using CONEX_APP.Presentation.Helpers;
+using CONEX_APP.Presentation.Services;
 using AddActivityWindow = CONEX_APP.Presentation.Views.Activities.AddActivityWindow;
 
 namespace CONEX_APP.Presentation.ViewModels.Activities;
 
 public class ActivityScheduleViewModel : ViewModelBase
 {
-    private readonly CreateActivityUseCase _createActivityUseCase;
-    private readonly UpdateActivityUseCase _updateActivityUseCase;
-    private readonly DeleteActivityUseCase _deleteActivityUseCase;
-    private readonly GetActivityUseCase _getActivitiesUseCase;
-    private readonly GetUsersUseCase _getUsersUseCase;
-    private readonly RemoveUserFromActivityUseCase _removeUserFromActivityUseCase;
-    private readonly AddToWaitlistUseCase _addToWaitlistUseCase;
-    private readonly GetWaitlistUseCase _getWaitlistUseCase;
-    private readonly RemoveFromWaitlistUseCase _removeFromWaitlistUseCase;
+    private readonly AppServices _services;
 
     public ObservableCollection<ActivityScheduleDto> ActivitySchedule { get; set; }
 
@@ -57,28 +46,9 @@ public class ActivityScheduleViewModel : ViewModelBase
     public ICommand GoToUsersCommand { get; }
     public ICommand ClearSearchCommand { get; }
 
-    public ActivityScheduleViewModel(
-        GetActivityUseCase getActivitiesUseCase,
-        CreateActivityUseCase createActivityUseCase,
-        UpdateActivityUseCase updateActivityUseCase,
-        DeleteActivityUseCase deleteActivityUseCase,
-        GetUsersUseCase getUsersUseCase,
-        RemoveUserFromActivityUseCase removeUserFromActivityUseCase,
-        AddToWaitlistUseCase addToWaitlistUseCase,
-        GetWaitlistUseCase getWaitlistUseCase,
-        RemoveFromWaitlistUseCase removeFromWaitlistUseCase,
-        Action goBack,
-        Action goToUsers)
+    public ActivityScheduleViewModel(AppServices services, Action goBack, Action goToUsers)
     {
-        _getActivitiesUseCase = getActivitiesUseCase;
-        _createActivityUseCase = createActivityUseCase;
-        _updateActivityUseCase = updateActivityUseCase;
-        _deleteActivityUseCase = deleteActivityUseCase;
-        _getUsersUseCase = getUsersUseCase;
-        _removeUserFromActivityUseCase = removeUserFromActivityUseCase;
-        _addToWaitlistUseCase = addToWaitlistUseCase;
-        _getWaitlistUseCase = getWaitlistUseCase;
-        _removeFromWaitlistUseCase = removeFromWaitlistUseCase;
+        _services = services;
         ActivitySchedule = new ObservableCollection<ActivityScheduleDto>();
         ActivityScheduleView = CollectionViewSource.GetDefaultView(ActivitySchedule);
         ActivityScheduleView.Filter = FilterActivity;
@@ -94,29 +64,18 @@ public class ActivityScheduleViewModel : ViewModelBase
         _ = LoadActivitiesAsync();
     }
 
-    private void OpenAddActivityWindow()
-    {
-        AddActivityViewModel vm = new AddActivityViewModel(
-            _createActivityUseCase, _updateActivityUseCase,
-            _getUsersUseCase, _removeUserFromActivityUseCase,
-            _addToWaitlistUseCase, _getWaitlistUseCase, _removeFromWaitlistUseCase);
-        AddActivityWindow win = new AddActivityWindow(vm);
-        win.ShowDialog();
-
-        if (vm.WasSaved)
-            _ = LoadActivitiesAsync();
-    }
+    private void OpenAddActivityWindow() => ShowActivityForm(null);
 
     private void EditActivity()
     {
-        if (SelectedActivity == null) return;
+        if (SelectedActivity != null)
+            ShowActivityForm(SelectedActivity);
+    }
 
-        AddActivityViewModel vm = new AddActivityViewModel(
-            _createActivityUseCase, _updateActivityUseCase,
-            _getUsersUseCase, _removeUserFromActivityUseCase,
-            _addToWaitlistUseCase, _getWaitlistUseCase, _removeFromWaitlistUseCase,
-            SelectedActivity);
-        AddActivityWindow win = new AddActivityWindow(vm);
+    private void ShowActivityForm(ActivityScheduleDto? activityToEdit)
+    {
+        AddActivityViewModel vm = _services.CreateActivityForm(activityToEdit);
+        AddActivityWindow win = new AddActivityWindow(vm) { Owner = System.Windows.Application.Current.MainWindow };
         win.ShowDialog();
 
         if (vm.WasSaved)
@@ -141,12 +100,12 @@ public class ActivityScheduleViewModel : ViewModelBase
     {
         try
         {
-            IEnumerable<ActivityScheduleDto> activities = await _getActivitiesUseCase.ExecuteAsync();
+            IEnumerable<ActivityScheduleDto> activities = await _services.GetActivities.ExecuteAsync();
             ActivitySchedule.Clear();
             foreach (ActivityScheduleDto activity in activities)
                 ActivitySchedule.Add(activity);
         }
-        catch (System.Exception ex)
+        catch (Exception ex)
         {
             MessageBox.Show($"Error cargando actividades: {ex.Message}");
         }
@@ -154,19 +113,30 @@ public class ActivityScheduleViewModel : ViewModelBase
 
     private async Task DeleteActivityAsync()
     {
-        if (SelectedActivity == null) return;
+        if (SelectedActivity is not { } activity) return;
+
+        string details = activity.EnrolledStudentsCount > 0 || activity.WaitlistCount > 0
+            ? $"\n\nSe darán de baja sus {activity.EnrolledStudentsCount} alumnos y se borrará su lista de espera ({activity.WaitlistCount})."
+            : string.Empty;
 
         MessageBoxResult result = MessageBox.Show(
-            $"¿Seguro que quieres eliminar la clase \"{SelectedActivity.Name}\"?",
+            $"¿Seguro que quieres eliminar la clase \"{activity.Name}\"?{details}",
             "Confirmar Eliminación",
             MessageBoxButton.YesNo,
             MessageBoxImage.Warning);
 
-        if (result == MessageBoxResult.Yes)
+        if (result != MessageBoxResult.Yes) return;
+
+        try
         {
-            await _deleteActivityUseCase.ExecuteAsync(SelectedActivity.Id);
-            await LoadActivitiesAsync();
+            await _services.DeleteActivity.ExecuteAsync(activity.Id);
         }
+        catch (Exception ex)
+        {
+            MessageBox.Show($"Error al eliminar la clase: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+        }
+
+        await LoadActivitiesAsync();
     }
 
     private void PrintAttendance()
@@ -179,14 +149,13 @@ public class ActivityScheduleViewModel : ViewModelBase
             PdfAttendanceDocumentGenerator generator = new PdfAttendanceDocumentGenerator(dateCalculator);
             string pdfPath = generator.GeneratePdf(SelectedActivity);
 
-            ProcessStartInfo psi = new ProcessStartInfo
+            Process.Start(new ProcessStartInfo
             {
                 FileName = pdfPath,
                 UseShellExecute = true
-            };
-            Process.Start(psi);
+            });
         }
-        catch (System.Exception ex)
+        catch (Exception ex)
         {
             MessageBox.Show($"Error al generar el PDF: {ex.Message}", "Error",
                 MessageBoxButton.OK, MessageBoxImage.Error);

@@ -1,18 +1,20 @@
-using System.Threading.Tasks;
 using CONEX_APP.Domain.Entities;
 using CONEX_APP.Domain.Exceptions;
 using CONEX_APP.Domain.Interfaces;
 using CONEX_APP.MainApplication.DTOs;
+using CONEX_APP.MainApplication.UseCases.Registrations;
 
 namespace CONEX_APP.MainApplication.UseCases.Users;
 
 public class UpdateUserUseCase
 {
     private readonly IUserRepository _userRepository;
+    private readonly IActivityRepository _activityRepository;
 
-    public UpdateUserUseCase(IUserRepository userRepository)
+    public UpdateUserUseCase(IUserRepository userRepository, IActivityRepository activityRepository)
     {
         _userRepository = userRepository;
+        _activityRepository = activityRepository;
     }
 
     public async Task ExecuteAsync(UpdateUserDto dto)
@@ -21,6 +23,13 @@ public class UpdateUserUseCase
         if (exists)
             throw new DuplicateEntityException(
                 $"Ya existe otro usuario con el mismo DNI o nombre completo: {dto.Name} {dto.Surname} {dto.SecondSurname}".Trim());
+
+        User current = await _userRepository.GetByIdAsync(dto.Id)
+            ?? throw new DomainException("El usuario ya no existe. Puede que se haya borrado.");
+
+        HashSet<int> currentActivityIds = current.Activities.Select(a => a.Id).ToHashSet();
+        IEnumerable<int> newActivityIds = dto.SelectedActivityIds.Where(id => !currentActivityIds.Contains(id));
+        await EnrollmentRules.EnsureCapacityAsync(_activityRepository, newActivityIds);
 
         User user = new User
         {

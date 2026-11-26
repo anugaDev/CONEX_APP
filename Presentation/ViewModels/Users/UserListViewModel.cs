@@ -1,16 +1,12 @@
 using System.Collections.ObjectModel;
 using System.ComponentModel;
+using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
-using CONEX_APP.Application.DTOs;
 using CONEX_APP.MainApplication.DTOs;
-using CONEX_APP.MainApplication.UseCases.Registrations;
-using CONEX_APP.MainApplication.UseCases.Renewals;
-using CONEX_APP.MainApplication.UseCases.Settings;
-using CONEX_APP.MainApplication.UseCases.Users;
 using CONEX_APP.Presentation.Commands;
 using CONEX_APP.Presentation.Helpers.Reports;
-using CONEX_APP.Presentation.ViewModels.Settings;
+using CONEX_APP.Presentation.Services;
 using CONEX_APP.Presentation.Views.Renewals;
 using CONEX_APP.Presentation.Views.Settings;
 using CONEX_APP.Presentation.Views.Users;
@@ -19,15 +15,7 @@ namespace CONEX_APP.Presentation.ViewModels.Users;
 
 public class UserListViewModel : ViewModelBase
 {
-    private readonly GetUsersUseCase _getUsersUseCase;
-    private readonly CreateUserUseCase _createUserUseCase;
-    private readonly UpdateUserUseCase _updateUserUseCase;
-    private readonly DeleteUserUseCase _deleteUserUseCase;
-    private readonly GetActivityUseCase _getActivityUseCase;
-    private readonly RemoveUserFromActivityUseCase _removeUserFromActivityUseCase;
-    private readonly RegisterRenewalUseCase _registerRenewalUseCase;
-    private readonly GetAppSettingsUseCase _getAppSettingsUseCase;
-    private readonly SaveAppSettingsUseCase _saveAppSettingsUseCase;
+    private readonly AppServices _services;
 
     public ObservableCollection<UserDto> Users { get; set; }
 
@@ -82,33 +70,14 @@ public class UserListViewModel : ViewModelBase
     public ICommand RenewUserCommand { get; }
     public ICommand OpenSettingsCommand { get; }
 
-    public UserListViewModel(
-        GetUsersUseCase getUsersUseCase,
-        CreateUserUseCase createUserUseCase,
-        UpdateUserUseCase updateUserUseCase,
-        DeleteUserUseCase deleteUserUseCase,
-        GetActivityUseCase getActivityUseCase,
-        RemoveUserFromActivityUseCase removeUserFromActivityUseCase,
-        RegisterRenewalUseCase registerRenewalUseCase,
-        GetAppSettingsUseCase getAppSettingsUseCase,
-        SaveAppSettingsUseCase saveAppSettingsUseCase,
-        Action goBack,
-        Action goToActivities)
+    public UserListViewModel(AppServices services, Action goBack, Action goToActivities)
     {
-        _getUsersUseCase = getUsersUseCase;
-        _createUserUseCase = createUserUseCase;
-        _updateUserUseCase = updateUserUseCase;
-        _deleteUserUseCase = deleteUserUseCase;
-        _getActivityUseCase = getActivityUseCase;
-        _removeUserFromActivityUseCase = removeUserFromActivityUseCase;
-        _registerRenewalUseCase = registerRenewalUseCase;
-        _getAppSettingsUseCase = getAppSettingsUseCase;
-        _saveAppSettingsUseCase = saveAppSettingsUseCase;
+        _services = services;
 
         Users = new ObservableCollection<UserDto>();
         UsersView = CollectionViewSource.GetDefaultView(Users);
         UsersView.Filter = FilterUser;
-        
+
         OpenAddUserWindowCommand = new RelayCommand(_ => OpenAddUserWindow());
         EditUserCommand = new RelayCommand(_ => EditUser(), _ => SelectedUser != null);
         DeleteUserCommand = new RelayCommand(async _ => await DeleteUserAsync(), _ => HasSelection());
@@ -116,7 +85,7 @@ public class UserListViewModel : ViewModelBase
         GoToActivitiesCommand = new RelayCommand(_ => goToActivities());
         PrintBadgeCommand = new RelayCommand(_ => PrintBadge(), _ => HasSelection());
         PrintRegistrationFormCommand = new RelayCommand(_ => PrintRegistrationForm(), _ => HasSelection());
-        PrintRenewalReceiptCommand = new RelayCommand(_ => PrintRenewalReceipt(), _ => HasSelection());
+        PrintRenewalReceiptCommand = new RelayCommand(async _ => await PrintRenewalReceiptAsync(), _ => HasSelection());
         ClearSearchCommand = new RelayCommand(_ => SearchText = string.Empty);
         RenewUserCommand = new RelayCommand(async _ => await RenewUserAsync(), _ => HasSelection());
         OpenSettingsCommand = new RelayCommand(_ => OpenSettings());
@@ -126,31 +95,26 @@ public class UserListViewModel : ViewModelBase
 
     private void OpenAddUserWindow()
     {
-        AddUserViewModel addUserViewModel = new AddUserViewModel(_createUserUseCase, _updateUserUseCase, _getActivityUseCase, _removeUserFromActivityUseCase);
-        AddUserWindow addUserWindow = new AddUserWindow(addUserViewModel);
-        
+        AddUserViewModel addUserViewModel = _services.CreateUserForm();
+        AddUserWindow addUserWindow = new AddUserWindow(addUserViewModel) { Owner = System.Windows.Application.Current.MainWindow };
+
         addUserWindow.ShowDialog();
 
         if (addUserViewModel.WasSaved)
-        {
             _ = LoadUsersAsync();
-        }
     }
 
     private void EditUser()
     {
-        if (SelectedUser != null)
-        {
-            AddUserViewModel addUserViewModel = new AddUserViewModel(_createUserUseCase, _updateUserUseCase, _getActivityUseCase, _removeUserFromActivityUseCase, SelectedUser);
-            AddUserWindow addUserWindow = new AddUserWindow(addUserViewModel);
-            
-            addUserWindow.ShowDialog();
+        if (SelectedUser == null) return;
 
-            if (addUserViewModel.WasSaved)
-            {
-                _ = LoadUsersAsync();
-            }
-        }
+        AddUserViewModel addUserViewModel = _services.CreateUserForm(SelectedUser);
+        AddUserWindow addUserWindow = new AddUserWindow(addUserViewModel) { Owner = System.Windows.Application.Current.MainWindow };
+
+        addUserWindow.ShowDialog();
+
+        if (addUserViewModel.WasSaved)
+            _ = LoadUsersAsync();
     }
 
     private bool FilterUser(object obj)
@@ -176,16 +140,14 @@ public class UserListViewModel : ViewModelBase
     {
         try
         {
-            IEnumerable<UserDto> usersFromDb = await _getUsersUseCase.ExecuteAsync();
+            IEnumerable<UserDto> usersFromDb = await _services.GetUsers.ExecuteAsync();
             Users.Clear();
             foreach (UserDto user in usersFromDb)
-            {
                 Users.Add(user);
-            }
         }
         catch (Exception ex)
         {
-            System.Windows.MessageBox.Show($"Error cargando usuarios: {ex.Message}");
+            MessageBox.Show($"Error cargando usuarios: {ex.Message}");
         }
     }
 
@@ -199,27 +161,31 @@ public class UserListViewModel : ViewModelBase
             : $"¿Seguro que quieres eliminar a los {targets.Count} usuarios seleccionados?\n\n" +
               string.Join("\n", targets.Select(u => $"• {u.Name} {u.Surname}"));
 
-        System.Windows.MessageBoxResult result = System.Windows.MessageBox.Show(
+        MessageBoxResult result = MessageBox.Show(
             message,
             "Confirmar Eliminación",
-            System.Windows.MessageBoxButton.YesNo,
-            System.Windows.MessageBoxImage.Warning);
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning);
 
-        if (result != System.Windows.MessageBoxResult.Yes) return;
+        if (result != MessageBoxResult.Yes) return;
 
+        List<int> freedActivityIds = new();
         try
         {
             foreach (UserDto user in targets)
-                await _deleteUserUseCase.ExecuteAsync(user.Id);
+            {
+                await _services.DeleteUser.ExecuteAsync(user.Id);
+                freedActivityIds.AddRange(user.EnrolledActivityIds);
+            }
         }
         catch (Exception ex)
         {
-            System.Windows.MessageBox.Show($"Error al eliminar usuarios: {ex.Message}");
+            MessageBox.Show($"Error al eliminar usuarios: {ex.Message}");
         }
-        finally
-        {
-            await LoadUsersAsync();
-        }
+
+        // Las plazas que dejan libres pueden ser para el primero de cada lista de espera
+        await _services.WaitlistPromotion.OfferPromotionsAsync(freedActivityIds);
+        await LoadUsersAsync();
     }
 
     private async Task RenewUserAsync()
@@ -233,7 +199,7 @@ public class UserListViewModel : ViewModelBase
         try
         {
             // 1. Obtener todas las clases una sola vez
-            List<ActivityScheduleDto> allActivities = (await _getActivityUseCase.ExecuteAsync()).ToList();
+            List<ActivityScheduleDto> allActivities = (await _services.GetActivities.ExecuteAsync()).ToList();
 
             for (int i = 0; i < targets.Count; i++)
             {
@@ -252,27 +218,68 @@ public class UserListViewModel : ViewModelBase
                 // Si se cancela, se omite este usuario y se pasa al siguiente
                 if (!selectionWindow.ViewModel.Confirmed) continue;
 
-                IReadOnlyList<ActivityScheduleDto> selectedClasses = selectionWindow.ViewModel.SelectedActivities;
+                List<int> selectedClassIds = selectionWindow.ViewModel.SelectedActivities.Select(a => a.Id).ToList();
 
-                // 3. Registrar la renovación en la base de datos
-                await _registerRenewalUseCase.ExecuteAsync(userSnapshot.Id);
+                // 3. Registrar la renovación (con importes y clases) en la base de datos
+                RenewalReceiptDto receipt = await _services.RegisterRenewal.ExecuteAsync(userSnapshot.Id, selectedClassIds);
                 anyRenewed = true;
 
-                // 4. Generar e imprimir el recibo con las clases seleccionadas
+                // 4. Generar e imprimir el recibo con los datos guardados
                 UserRenewalReceiptGenerator generator = new UserRenewalReceiptGenerator();
-                string pdfPath = generator.GenerateReceipt(userSnapshot, selectedClasses);
-                OpenPdf(pdfPath);
+                OpenPdf(generator.GenerateReceipt(userSnapshot, receipt));
             }
         }
         catch (Exception ex)
         {
-            System.Windows.MessageBox.Show($"Error al procesar la renovación: {ex.Message}");
+            MessageBox.Show($"Error al procesar la renovación: {ex.Message}");
         }
         finally
         {
             if (anyRenewed)
                 await LoadUsersAsync();
         }
+    }
+
+    private async Task PrintRenewalReceiptAsync()
+    {
+        List<UserDto> targets = GetTargetUsers();
+        List<string> withoutRenewals = new();
+        List<string> errors = new();
+        UserRenewalReceiptGenerator generator = new UserRenewalReceiptGenerator();
+
+        foreach (UserDto user in targets)
+        {
+            try
+            {
+                RenewalReceiptDto? receipt = await _services.GetLastRenewalReceipt.ExecuteAsync(user.Id);
+                if (receipt == null)
+                {
+                    withoutRenewals.Add($"• {user.FullName}");
+                    continue;
+                }
+
+                OpenPdf(generator.GenerateReceipt(user, receipt));
+            }
+            catch (Exception ex)
+            {
+                errors.Add($"• {user.FullName}: {ex.Message}");
+            }
+        }
+
+        if (withoutRenewals.Count > 0)
+        {
+            string intro = withoutRenewals.Count == 1
+                ? "Este usuario no tiene renovaciones registradas:"
+                : "Estos usuarios no tienen renovaciones registradas:";
+            MessageBox.Show(
+                $"{intro}\n\n{string.Join("\n", withoutRenewals)}\n\nUsa «🔄 Renovar» para registrar una renovación y generar su recibo.",
+                "Sin renovaciones",
+                MessageBoxButton.OK,
+                MessageBoxImage.Information);
+        }
+
+        if (errors.Count > 0)
+            MessageBox.Show($"Error al generar el recibo de renovación:\n\n{string.Join("\n", errors)}");
     }
 
     private static void OpenPdf(string pdfPath)
@@ -286,7 +293,7 @@ public class UserListViewModel : ViewModelBase
 
     private void OpenSettings()
     {
-        SettingsWindow settingsWindow = SettingsWindow.Create(_getAppSettingsUseCase, _saveAppSettingsUseCase);
+        SettingsWindow settingsWindow = SettingsWindow.Create(_services.GetAppSettings, _services.SaveAppSettings);
         settingsWindow.ShowDialog();
 
         // Recargamos los usuarios para que el estado de renovación refleje el nuevo período
@@ -303,12 +310,6 @@ public class UserListViewModel : ViewModelBase
     {
         UserRegistrationFormGenerator generator = new UserRegistrationFormGenerator();
         PrintForSelectedUsers(user => generator.GenerateRegistrationForm(user), "la hoja de inscripción");
-    }
-
-    private void PrintRenewalReceipt()
-    {
-        UserRenewalReceiptGenerator generator = new UserRenewalReceiptGenerator();
-        PrintForSelectedUsers(user => generator.GenerateReceipt(user), "el recibo de renovación");
     }
 
     /// <summary>Genera y abre un PDF por cada usuario seleccionado.</summary>
@@ -330,6 +331,6 @@ public class UserListViewModel : ViewModelBase
         }
 
         if (errors.Count > 0)
-            System.Windows.MessageBox.Show($"Error al generar {documentName}:\n\n{string.Join("\n", errors)}");
+            MessageBox.Show($"Error al generar {documentName}:\n\n{string.Join("\n", errors)}");
     }
 }

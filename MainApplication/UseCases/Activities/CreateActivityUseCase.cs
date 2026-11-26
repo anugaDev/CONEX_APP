@@ -16,6 +16,9 @@ public class CreateActivityUseCase
 
     public async Task ExecuteAsync(CreateActivityDto dto)
     {
+        if (dto.MaxStudents < 0)
+            throw new DomainException("El aforo máximo no puede ser negativo.");
+
         bool exists = await _activityRepository.ExistsAsync(dto.Name);
         if (exists)
             throw new DuplicateEntityException(

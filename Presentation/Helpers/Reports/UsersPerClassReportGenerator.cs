@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 using System.Linq;
-using CONEX_APP.Application.DTOs;
+using CONEX_APP.MainApplication.DTOs;
 using QuestPDF.Fluent;
 using QuestPDF.Helpers;
 using QuestPDF.Infrastructure;

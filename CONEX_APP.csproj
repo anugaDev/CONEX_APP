@@ -12,39 +12,20 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.EntityFrameworkCore" Version="8.0.4" />
     <PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="8.0.4" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.4">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.4">
-      <PrivateAssets>all</PrivateAssets>
-      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
-    </PackageReference>
     <PackageReference Include="QuestPDF" Version="2023.12.6" />
   </ItemGroup>
 
+  <!--
+    La base de datos NO se copia a bin\: vive en %LOCALAPPDATA%\CONEX (ver Infrastructure/Data/DatabasePaths.cs).
+    El esquema va incrustado en el ejecutable.
+  -->
   <ItemGroup>
-    <None Update="conex_app.db">
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </None>
+    <EmbeddedResource Include="Infrastructure\Data\Schema\schema.sql" />
   </ItemGroup>
 
   <ItemGroup>
     <Resource Include="Presentation\Resources\Images\conex_logo.png" />
     <Resource Include="Presentation\Resources\Images\conex_logo.ico" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Page Update="Presentation\Views\Activities\AddUserWindow.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <XamlRuntime>Wpf</XamlRuntime>
-      <SubType>Designer</SubType>
-    </Page>
-    <Page Update="Presentation\Views\Activities\AddActivityWindow.xaml">
-      <Generator>MSBuild:Compile</Generator>
-      <XamlRuntime>Wpf</XamlRuntime>
-      <SubType>Designer</SubType>
-    </Page>
   </ItemGroup>
 
 </Project>

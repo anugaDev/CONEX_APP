@@ -1,7 +1,7 @@
 <Window x:Class="CONEX_APP.Presentation.Views.Users.AddUserWindow"
         xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-        Title="Añadir Nuevo Usuario" Height="500" Width="400" WindowStartupLocation="CenterOwner" ResizeMode="NoResize">
+        Title="{Binding WindowTitle}" Height="640" Width="430" WindowStartupLocation="CenterOwner" ResizeMode="NoResize">
     <Window.Resources>
         <BooleanToVisibilityConverter x:Key="BoolToVis"/>
 
@@ -101,8 +101,8 @@
                 <TextBlock Text="Teléfono:" Margin="0,0,0,5"/>
                 <TextBox Text="{Binding Phone, UpdateSourceTrigger=PropertyChanged}" Margin="0,0,0,10" Padding="5"/>
 
-                <!-- Correo Electrónico (obligatorio) -->
-                <TextBlock Text="Correo Electrónico: *" Margin="0,0,0,5"/>
+                <!-- Correo Electrónico (opcional, pero con formato válido si se rellena) -->
+                <TextBlock Text="Correo Electrónico:" Margin="0,0,0,5"/>
                 <TextBox Style="{StaticResource EmailTextBox}"
                          Text="{Binding Email, UpdateSourceTrigger=PropertyChanged}"
                          Margin="0,0,0,2"/>
@@ -124,8 +124,11 @@
                 <CheckBox Content="Es Tutor" IsChecked="{Binding IsTutor}" Margin="0,0,0,20"/>
 
                 <TextBlock Text="Añadir a Clase/Actividad:" Margin="0,0,0,5"/>
-                <ComboBox ItemsSource="{Binding AvailableActivities}" SelectedItem="{Binding SelectedActivityToAdd, UpdateSourceTrigger=PropertyChanged}" DisplayMemberPath="Name" Margin="0,0,0,10" Padding="5"/>
-                
+                <ComboBox ItemsSource="{Binding AvailableActivities}" SelectedItem="{Binding SelectedActivityToAdd, UpdateSourceTrigger=PropertyChanged}" DisplayMemberPath="DisplayLabel" Margin="0,0,0,2" Padding="5"
+                          ToolTip="Si eliges una clase completa, se te ofrecerá apuntar al usuario a la lista de espera"/>
+                <TextBlock Text="Las clases completas se pueden elegir para apuntarse a su lista de espera."
+                           FontSize="10" Foreground="Gray" TextWrapping="Wrap" Margin="0,0,0,10"/>
+
                 <TextBlock Text="Clases Apuntado:" Margin="0,0,0,5" FontSize="11" Foreground="Gray"/>
                 <Grid Margin="0,0,0,15">
                     <Grid.ColumnDefinitions>
@@ -148,6 +151,43 @@
                             Width="70"
                             VerticalAlignment="Stretch"
                             Background="#CC3300"
+                            Foreground="White"
+                            FontSize="11"
+                            FontWeight="Bold"
+                            Padding="4"/>
+                </Grid>
+
+                <!-- Listas de espera -->
+                <StackPanel Orientation="Horizontal" Margin="0,0,0,5">
+                    <TextBlock Text="⏳ En lista de espera:" FontSize="11" FontWeight="Bold" Foreground="#B8860B"/>
+                </StackPanel>
+                <Grid Margin="0,0,0,15">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <ListBox Grid.Column="0"
+                             ItemsSource="{Binding WaitlistItems}"
+                             SelectedItem="{Binding SelectedWaitlistItem, Mode=TwoWay}"
+                             Height="70"
+                             Margin="0,0,5,0"
+                             Background="#FFFDF0"
+                             BorderBrush="#B8860B">
+                        <ListBox.ItemTemplate>
+                            <DataTemplate>
+                                <StackPanel Orientation="Horizontal">
+                                    <TextBlock Text="{Binding ActivityName}"/>
+                                    <TextBlock Text="{Binding StatusLabel, StringFormat=' ({0})'}" Foreground="#8B6914" FontSize="11"/>
+                                </StackPanel>
+                            </DataTemplate>
+                        </ListBox.ItemTemplate>
+                    </ListBox>
+                    <Button Grid.Column="1"
+                            Content="✖ Quitar&#x0a;de lista"
+                            Command="{Binding RemoveFromWaitlistCommand}"
+                            Width="70"
+                            VerticalAlignment="Stretch"
+                            Background="#8B6914"
                             Foreground="White"
                             FontSize="11"
                             FontWeight="Bold"

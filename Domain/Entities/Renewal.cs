@@ -16,4 +16,8 @@ public class Renewal
     /// Si es null, se calcula como RenewalDate + AppSettings.RenewalPeriodMonths.
     /// </summary>
     public DateTime? NextRenewalDate { get; set; }
+
+    public decimal? RenewalAmount { get; set; }
+
+    public ICollection<RenewalClass> Classes { get; set; } = new List<RenewalClass>();
 }

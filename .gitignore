@@ -17,6 +17,11 @@ conex_app_test.db
 *.accdb
 *.ldb
 *.laccdb
+# Volcados de datos generados desde Conex (contienen datos personales de los socios)
+tools/*.sql
+tools/*.sql.*
+# Copias de seguridad de la BD si alguien usa CONEX_DATA_DIR dentro del proyecto
+backups/
 README.md
 tools/check_access.ps1
 tools/check_alferez.ps1

@@ -25,8 +25,11 @@
             <Button Content="🖨️ Imprimir Listado de Clases Totales" Command="{Binding PrintTotalClassesCommand}" 
                     Height="50" Margin="0,0,0,15" FontSize="16" Background="#FF8C00" Foreground="White" FontWeight="SemiBold"/>
                     
-            <Button Content="🖨️ Imprimir Listado de Usuarios por Clase" Command="{Binding PrintUsersPerClassCommand}" 
-                    Height="50" FontSize="16" Background="#FF8C00" Foreground="White" FontWeight="SemiBold"/>
+            <Button Content="🖨️ Imprimir Listado de Usuarios por Clase" Command="{Binding PrintUsersPerClassCommand}"
+                    Height="50" Margin="0,0,0,15" FontSize="16" Background="#FF8C00" Foreground="White" FontWeight="SemiBold"/>
+
+            <Button Content="⏳ Imprimir Listas de Espera" Command="{Binding PrintWaitlistsCommand}"
+                    Height="50" FontSize="16" Background="#B8860B" Foreground="White" FontWeight="SemiBold"/>
         </StackPanel>
     </Grid>
 </UserControl>
