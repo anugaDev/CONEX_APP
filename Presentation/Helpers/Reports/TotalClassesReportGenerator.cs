@@ -44,7 +44,7 @@ public class TotalClassesReportGenerator : PdfReportBase
                 table.Cell().Element(DataCell).Text(activity.Name);
                 table.Cell().Element(DataCell).Text(activity.Tutor);
                 table.Cell().Element(DataCell).Text(activity.Classroom);
-                table.Cell().Element(DataCell).Text(activity.Date.ToString("dddd HH:mm"));
+                table.Cell().Element(DataCell).Text(activity.Schedule);
                 table.Cell().Element(DataCell).Text(activity.Occupancy);
             }
         });

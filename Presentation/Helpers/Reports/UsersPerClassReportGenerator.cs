@@ -32,7 +32,7 @@ public class UsersPerClassReportGenerator : PdfReportBase
         classBlock.Item().PaddingBottom(5).Text(text =>
         {
             text.Span($"{activity.Name} - {activity.Tutor}").FontSize(14).SemiBold().FontColor(Colors.Blue.Darken2);
-            text.Span($"\nAula: {activity.Classroom} | Horario: {activity.Date:dddd HH:mm} | Alumnos: {activity.EnrolledStudentsCount}").FontSize(10).FontColor(Colors.Grey.Darken3);
+            text.Span($"\nAula: {activity.Classroom} | Horario: {activity.Schedule} | Alumnos: {activity.EnrolledStudentsCount}").FontSize(10).FontColor(Colors.Grey.Darken3);
         });
 
         if (activity.EnrolledStudentNames.Count == 0)

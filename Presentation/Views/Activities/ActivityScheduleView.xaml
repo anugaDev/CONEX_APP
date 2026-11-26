@@ -73,7 +73,7 @@
                 <DataGridTextColumn Header="Nombre de Actividad" Binding="{Binding Name}" Width="*"/>
                 <DataGridTextColumn Header="Tutor" Binding="{Binding Tutor}" Width="*"/>
                 <DataGridTextColumn Header="Aula" Binding="{Binding Classroom}" Width="100"/>
-                <DataGridTextColumn Header="Día y Hora" Binding="{Binding Date, StringFormat={}{0:dddd HH:mm}}" Width="150"/>
+                <DataGridTextColumn Header="Día y Hora" Binding="{Binding Schedule}" SortMemberPath="Date" Width="150"/>
                 <DataGridTextColumn Header="Apuntados / Máx" Binding="{Binding Occupancy}" Width="130"/>
                 <DataGridTemplateColumn Header="En espera" Width="90">
                     <DataGridTemplateColumn.CellTemplate>

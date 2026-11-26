@@ -1,4 +1,6 @@
+using System.Globalization;
 using System.Windows;
+using System.Windows.Markup;
 using CONEX_APP.Infrastructure.Data;
 using CONEX_APP.Presentation.Views;
 
@@ -8,6 +10,8 @@ public partial class App : System.Windows.Application
 {
     protected override void OnStartup(StartupEventArgs e)
     {
+        UseSpanishCulture();
+
         base.OnStartup(e);
 
         // Production = BD con los datos reales. Test = BD vacía para desarrollo.
@@ -45,5 +49,22 @@ public partial class App : System.Windows.Application
         MainWindow window = new MainWindow();
         MainWindow = window;
         window.Show();
+    }
+
+    // Fechas, días de la semana y monedas en castellano en toda la aplicación, sea cual sea el idioma de Windows.
+    // WPF no usa la cultura del sistema en los Binding con StringFormat (por defecto usa en-US),
+    // por eso además hay que cambiar la propiedad Language de todos los elementos.
+    private static void UseSpanishCulture()
+    {
+        CultureInfo spanish = CultureInfo.GetCultureInfo("es-ES");
+
+        CultureInfo.DefaultThreadCurrentCulture = spanish;
+        CultureInfo.DefaultThreadCurrentUICulture = spanish;
+        Thread.CurrentThread.CurrentCulture = spanish;
+        Thread.CurrentThread.CurrentUICulture = spanish;
+
+        FrameworkElement.LanguageProperty.OverrideMetadata(
+            typeof(FrameworkElement),
+            new FrameworkPropertyMetadata(XmlLanguage.GetLanguage(spanish.IetfLanguageTag)));
     }
 }
