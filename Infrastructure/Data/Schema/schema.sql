@@ -2,7 +2,7 @@
 --
 -- Es la ÚNICA definición del esquema. La usan:
 --   * la aplicación al arrancar (Infrastructure/Data/DatabaseInitializer.cs, como recurso incrustado)
---   * tools/rebuild_db.ps1, para crear una BD nueva antes de cargar import_data.sql
+--   * tools/reimport_db.ps1, para crear la BD nueva antes de cargar los datos de Conex_bs.mdb
 --
 -- Todas las sentencias deben poder ejecutarse sobre una BD que ya existe sin cambiar nada
 -- (CREATE ... IF NOT EXISTS, INSERT OR IGNORE). Si añades una columna a una tabla que ya existe,
